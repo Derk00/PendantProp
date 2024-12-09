@@ -1,0 +1,106 @@
+/* styles.css */
+
+/* General body styling for dark mode */
+body {
+    background-color: #121212;
+    color: #ffffff;
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: left;
+    justify-content: left;
+    height: 100vh;
+    text-align: left;
+}
+
+/* Styling buttons */
+button {
+    background-color: #1e88e5;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+button:hover {
+    background-color: #1565c0;
+}
+
+/* Specific styling for the settings button */
+.settings-button {
+    background-color: #e53935; /* Different background color */
+}
+
+.settings-button:hover {
+    background-color: #c62828; /* Different hover color */
+}
+
+/* Specific styling for the about button */
+.about-button {
+    background-color: #ffffff; /* White background color */
+    color: #121212; /* Dark text color for contrast */
+}
+
+.about-button:hover {
+    background-color: #e0e0e0; /* Light grey hover color */
+}
+
+/* Form inputs */
+input {
+    padding: 10px;
+    margin: 5px 0;
+    border: 1px solid #ffffff;
+    border-radius: 5px;
+    background-color: #333333;
+    color: #ffffff;
+}
+
+label {
+    font-weight: bold;
+}
+
+/* Links */
+a {
+    color: #1e88e5;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* Align forms containing buttons next to each other */
+.button-container form {
+    display: inline-block;
+    margin-right: 10px; /* Adjust the margin as needed */
+}
+
+/* Image grid styling */
+.image-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.grid-item {
+    border: 1px solid #ffffff;
+    padding: 10px;
+    text-align: center;
+}
+
+.grid-item img {
+    max-width: 50%;
+    max-height: 50vh;
+    height: auto;
+    display: block;
+    margin: 0 auto 10px;
+}
+
+.grid-item h3 {
+    margin: 0;
+}

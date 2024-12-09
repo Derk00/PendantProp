@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>PendantProp</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+
+<body>
+    <h1>PendantProp</h1>
+    <div class="button-container">
+        <form action="/input_settings" method="post">
+            <button type="submit" class="settings-button">Settings</button>
+        </form>
+        <form action="/input_surfactant_characterization" method="post">
+            <button type="submit">Surfactant Characterization</button>
+        </form>
+        <form action="/input_formulate" method="post">
+            <button type="submit">Formulate</button>
+        </form>
+        <form action="/input_measure_wells" method="post">
+            <button type="submit">Measure Well</button>
+        </form>
+        <form action="/about">
+            <button type="submit" class="about-button">About</button>
+        </form>
+    </div>
+    <div class="image-grid">
+        <div class="grid-item">
+            <h3>Webcam Opentron</h3>
+            <img src="{{ url_for('static', filename='images/test.jpg') }}" alt="Webcam Opentron">
+        </div>
+        <div class="grid-item">
+            <h3>Camera Pendant Drop</h3>
+            <img src="{{ url_for('static', filename='images/test.jpg') }}" alt="Webcam Opentron">
+        </div>
+        <div class="grid-item">
+            <h3>Surface Tension over Time</h3>
+            <img src="{{ url_for('static', filename='images/test.jpg') }}" alt="Webcam Opentron">
+        </div>
+        <div class="grid-item">
+            <h3>Surface Tension over Concentration</h3>
+            <img src="{{ url_for('static', filename='images/test.jpg') }}" alt="Webcam Opentron">
+        </div>
+    </div>
+</body>
+</html>

@@ -6,12 +6,14 @@
     <title>PendantProp</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
-
 <body>
     <h1>PendantProp</h1>
     <div class="button-container">
         <form action="/input_settings" method="post">
             <button type="submit" class="settings-button">Settings</button>
+        </form>
+        <form action="/input_calibration" method="post">
+            <button type="submit">Calibration</button>
         </form>
         <form action="/input_surfactant_characterization" method="post">
             <button type="submit">Surfactant Characterization</button>
@@ -43,6 +45,9 @@
             <h3>Surface Tension over Concentration</h3>
             <img src="{{ url_for('static', filename='images/test.jpg') }}" alt="Webcam Opentron">
         </div>
+    </div>
+    <div class="status-bar">
+        Last action: {{ last_action }}
     </div>
 </body>
 </html>

@@ -1,43 +1,23 @@
-import os
 import cv2
-from threading import Thread, Event
+from threading import Thread
 
-
-def measure_well(start_well: str, end_well: str):
-    print(f"Measuring well from {start_well} to {end_well}")
-
-
-def save_csv_file(exp_name: str, csv_file, app):
-    exp_dir = os.path.join(app.config["UPLOAD_FOLDER"], exp_name)
-    os.makedirs(exp_dir, exist_ok=True)
-    file_path = os.path.join(exp_dir, csv_file.filename)
-    csv_file.save(file_path)
-
-
-############## the opentron live feed ################
 # Initialize the webcam
-stop_background_threads = Event()
-
 camera = cv2.VideoCapture(0)
 camera.set(cv2.CAP_PROP_FRAME_WIDTH, 640)  # Set width
 camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)  # Set height
 camera.set(cv2.CAP_PROP_FPS, 30)  # Set frame rate
 
+camera = cv2.VideoCapture(0)
 if not camera.isOpened():
-    print("Error: Could not open camera.")
-
-# Global variable to store the current frame
-current_frame = None
+    raise Exception("Could not open video device")
 
 
 def capture_frames():
     global current_frame
-    while not stop_background_threads.is_set():
+    while True:
         success, frame = camera.read()
         if success:
             current_frame = frame
-        else:
-            print("Error: Could not read frame.")
 
 
 # Start the frame capture thread
@@ -59,4 +39,4 @@ def generate_opentron_frames():
 
 
 if __name__ == "__main__":
-    print("This is a custom function file")
+    generate_opentron_frames()

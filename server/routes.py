@@ -12,11 +12,12 @@ from flask import (
 )
 from server.utils import save_csv_file, load_settings, save_settings
 from hardware.cameras import OpentronCamera, PendantDropCamera
+from hardware.opentrons import run_opentron_protocol
 
 # initialize the Flask app
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "default_secret_key")
-app.config["UPLOAD_FOLDER"] = "meta-data"
+app.config["UPLOAD_FOLDER"] = "data"
 
 
 @app.route("/")
@@ -49,7 +50,8 @@ def input_initialisation():
 def initialisation():
     exp_name = request.form.get("exp_name")
     csv_file = request.files.get("csv_file")
-    save_csv_file(exp_name, csv_file, app)
+    sub_dir = "meta_data"
+    save_csv_file(exp_name, sub_dir, csv_file, app)
     session["exp_name"] = exp_name
     session["last_action"] = "Initialisation done"
     return redirect(url_for("index"))
@@ -66,7 +68,8 @@ def formulate():
     exp_name = session.get("exp_name")
     if not exp_name:
         abort(400, "Experiment name not found in session")
-    save_csv_file(exp_name, csv_file, app)
+    sub_dir = "meta_data"
+    save_csv_file(exp_name, sub_dir, csv_file, app)
     session["last_action"] = "Formulation done"
     return redirect(url_for("index"))
 
@@ -96,7 +99,8 @@ def characterize():
     exp_name = session.get("exp_name")
     if not exp_name:
         abort(400, "Experiment name not found in session")
-    save_csv_file(exp_name, csv_file, app)
+    sub_dir = "meta_data"
+    save_csv_file(exp_name, sub_dir, csv_file, app)
     session["last_action"] = "Surfactant characterized"
     return redirect(url_for("index"))
 
@@ -113,7 +117,10 @@ def input_calibration():
 
 @app.route("/calibrate", methods=["POST"])
 def calibrate():
-    print("Calibrating...")
+    settings = load_settings()
+    settings["PROTOCOL_FILE"] = "calibration.py"
+    save_settings(settings)
+    run_opentron_protocol()
     session["last_action"] = "Calibration done"
     return redirect(url_for("index"))
 

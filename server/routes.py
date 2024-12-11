@@ -1,7 +1,4 @@
 import os
-import cv2
-import threading
-from threading import Thread, Event
 from flask import (
     Flask,
     render_template,
@@ -13,9 +10,10 @@ from flask import (
     abort,
     Response,
 )
-from custom_functions import measure_well, save_csv_file, generate_opentron_frames
+from server.utils import save_csv_file, load_settings, save_settings
+from hardware.cameras import OpentronCamera, PendantDropCamera
 
-
+# initialize the Flask app
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "default_secret_key")
 app.config["UPLOAD_FOLDER"] = "meta-data"
@@ -29,16 +27,31 @@ def index():
 
 @app.route("/input_settings", methods=["POST"])
 def input_settings():
-    return render_template("input_settings.html")
+    return render_template("input_settings.html", settings=load_settings())
 
 
 @app.route("/settings", methods=["POST"])
 def settings():
+    settings = load_settings()
+    # update settings with form data
+    settings["ROBOT_IP"] = request.form.get("ROBOT_IP")
+    save_settings(settings)
+    session["last_action"] = "Settings updated"
+    return redirect(url_for("index"))
+
+
+@app.route("/input_initialisation", methods=["POST"])
+def input_initialisation():
+    return render_template("input_initialisation.html")
+
+
+@app.route("/initialisation", methods=["POST"])
+def initialisation():
     exp_name = request.form.get("exp_name")
     csv_file = request.files.get("csv_file")
     save_csv_file(exp_name, csv_file, app)
     session["exp_name"] = exp_name
-    session["last_action"] = "Settings saved"
+    session["last_action"] = "Initialisation done"
     return redirect(url_for("index"))
 
 
@@ -67,7 +80,7 @@ def input_measure_wells():
 def measure():
     start_well = request.form.get("start_well")
     end_well = request.form.get("end_well")
-    measure_well(start_well, end_well)
+    print(f"Measuring wells {start_well} to {end_well}...")
     session["last_action"] = "Wells measured"
     return redirect(url_for("index"))
 
@@ -105,12 +118,28 @@ def calibrate():
     return redirect(url_for("index"))
 
 
+opentron_camera = (
+    OpentronCamera()
+)  # needs to be outside the route function to avoid issues
+
+
 @app.route("/opentron_video_feed")
 def opentron_video_feed():
     return Response(
-        generate_opentron_frames(), mimetype="multipart/x-mixed-replace; boundary=frame"
+        opentron_camera.generate_frames(),
+        mimetype="multipart/x-mixed-replace; boundary=frame",
     )
 
 
-if __name__ == "__main__":
-    app.run(debug=False, host="0.0.0.0", port=5000)
+@app.route("/pendant_drop_video_feed")
+def pendant_drop_video_feed():
+    pendant_drop_camera = (
+        PendantDropCamera()
+    )  # needs to be in the route function to avoid issues
+    return Response(
+        pendant_drop_camera.generate_frames(),
+        mimetype="multipart/x-mixed-replace; boundary=frame",
+    )
+
+
+# TODO feed plots

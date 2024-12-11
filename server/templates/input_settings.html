@@ -9,13 +9,11 @@
 <body>
     <h1>Settings</h1>
     <form action="/settings" method="post" enctype="multipart/form-data">
-        <label for="exp_name">Experiment name:</label>
-        <input type="text" id="exp_name" name="exp_name" required>
+        <label for="ROBOT_IP">Robot IP adress:</label>
+        <input type="text" id="ROBOT_IP" name="ROBOT_IP" value="{{ settings.ROBOT_IP}}" required>
         <br>
-        <label for="csv_file">Upload CSV file:</label>
-        <input type="file" id="csv_file" name="csv_file" accept=".csv" required>
-        <br>
-        <button type="submit">Update Metadata</button>
+
+        <button type="submit">Update settings</button>
     </form>
 </body>
 </html>

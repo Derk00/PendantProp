@@ -9,10 +9,15 @@ from flask import (
     session,
     abort,
     Response,
+    jsonify,
 )
 from server.utils import save_csv_file, load_settings, save_settings
 from hardware.cameras import OpentronCamera, PendantDropCamera
-from hardware.opentrons import run_opentron_protocol
+from hardware.opentrons import Opentrons_API
+
+
+# initialize the Opentrons API
+opentrons_api = Opentrons_API()
 
 # initialize the Flask app
 app = Flask(__name__)
@@ -117,10 +122,7 @@ def input_calibration():
 
 @app.route("/calibrate", methods=["POST"])
 def calibrate():
-    settings = load_settings()
-    settings["PROTOCOL_FILE"] = "calibration.py"
-    save_settings(settings)
-    run_opentron_protocol()
+    opentrons_api.calibration()
     session["last_action"] = "Calibration done"
     return redirect(url_for("index"))
 
@@ -147,6 +149,14 @@ def pendant_drop_video_feed():
         pendant_drop_camera.generate_frames(),
         mimetype="multipart/x-mixed-replace; boundary=frame",
     )
+
+
+@app.route("/status", methods=["POST"])
+def status():
+    data = request.get_json()
+    status = data.get("status")
+    print(f"Status: {status}")
+    return jsonify({"status": status})
 
 
 # TODO feed plots

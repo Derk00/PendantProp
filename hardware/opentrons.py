@@ -28,6 +28,7 @@ class Opentrons_API:
             print(f"Protocol ID:\n{self.protocol_id}")
             return self.protocol_id
         except:
+            #TODO log it in the output
             pass
 
     def upload_data(self):
@@ -56,13 +57,10 @@ class Opentrons_API:
         r = requests.post(url=actions_url, headers=self.headers, data=action_payload)
         print(f"Request status:\n{r}\n{r.text}")
 
-
+#TODO this as a method in the class
 def run_opentron_protocol():
     api = Opentrons_API()
     api.upload_protocol()
     api.create_run_from_protocol()
     api.run_protocol()
 
-
-if __name__ == "__main__":
-    print("...")

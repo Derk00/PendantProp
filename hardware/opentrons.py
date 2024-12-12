@@ -65,8 +65,4 @@ def run_opentron_protocol():
 
 
 if __name__ == "__main__":
-    # api = Opentrons_API()
-    # api.upload_protocol()
-    # api.create_run_from_protocol()
-    # api.run_protocol()
     print("...")

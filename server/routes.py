@@ -11,7 +11,7 @@ from flask import (
     Response,
     jsonify,
 )
-from server.utils import save_csv_file, load_settings, save_settings
+from utils.load_save_functions import save_csv_file, load_settings, save_settings
 from hardware.cameras import OpentronCamera, PendantDropCamera
 from hardware.opentrons import Opentrons_API
 
@@ -22,7 +22,7 @@ opentrons_api = Opentrons_API()
 # initialize the Flask app
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "default_secret_key")
-app.config["UPLOAD_FOLDER"] = "data"
+app.config["UPLOAD_FOLDER"] = "experiments"
 
 
 @app.route("/")
@@ -43,6 +43,13 @@ def settings():
     settings["ROBOT_IP"] = request.form.get("ROBOT_IP")
     save_settings(settings)
     session["last_action"] = "Settings updated"
+    return redirect(url_for("index"))
+
+@app.route("/reset_settings", methods=["POST"])
+def reset_settings():
+    settings = load_settings(file_name="default_settings.json")
+    save_settings(settings)
+    session["last_action"] = "Settings reset"
     return redirect(url_for("index"))
 
 

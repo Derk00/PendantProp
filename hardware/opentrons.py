@@ -1,6 +1,6 @@
 import requests
 import json
-from server.utils import load_settings
+from utils.load_save_functions import load_settings
 import subprocess
 
 
@@ -70,6 +70,27 @@ class Opentrons_API:
         self.upload_protocol(protocol_file=protocol_file)
         self.create_run_from_protocol()
         self.run_protocol()
+
+    def formulate(self):
+        #TODO: implement this function
+        pass
+
+    def measure_well(self):
+        #TODO: implement this function
+        pass
+
+    def characterize(self):
+        #TODO: implement this function
+        pass
+
+
+
+
+
+
+
+
+# TODO old code, maybe delete it later?
 
     # def run_experiment(self, protocol_file, data_file=None):
     #     self.upload_protocol(protocol_file=protocol_file)

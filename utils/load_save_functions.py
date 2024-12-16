@@ -20,18 +20,16 @@ def save_csv_file(exp_name: str, subdir_name: str, csv_file, app):
     csv_file.save(file_path)
 
 
-SETTINGS_FILE = "settings.json"
 
-
-def load_settings():
-    if os.path.exists(SETTINGS_FILE):
-        with open(SETTINGS_FILE, "r") as file:
+def load_settings(file_name="settings.json"):
+    if os.path.exists(file_name):
+        with open(file_name, "r") as file:
             return json.load(file)
     return {}
 
 
-def save_settings(settings):
-    with open(SETTINGS_FILE, "w") as file:
+def save_settings(settings, file_name="settings.json"):
+    with open(file_name, "w") as file:
         json.dump(settings, file, indent=4)
 
 

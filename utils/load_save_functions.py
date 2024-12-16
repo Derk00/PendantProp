@@ -22,14 +22,16 @@ def save_csv_file(exp_name: str, subdir_name: str, csv_file, app):
 
 
 def load_settings(file_name="settings.json"):
-    if os.path.exists(file_name):
-        with open(file_name, "r") as file:
+    file_path = f'settings/{file_name}'
+    if os.path.exists(file_path):
+        with open(file_path, "r") as file:
             return json.load(file)
     return {}
 
 
 def save_settings(settings, file_name="settings.json"):
-    with open(file_name, "w") as file:
+    file_path = f'settings/{file_name}'
+    with open(file_path, "w") as file:
         json.dump(settings, file, indent=4)
 
 

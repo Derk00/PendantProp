@@ -39,8 +39,25 @@ def input_settings():
 @app.route("/settings", methods=["POST"])
 def settings():
     settings = load_settings()
+
     # update settings with form data
+    ## general settings
     settings["ROBOT_IP"] = request.form.get("ROBOT_IP")
+    settings["ROBOT_TYPE"] = request.form.get("ROBOT_TYPE")
+    ## pendant drop settings
+    settings["DROP_VOLUME"] = request.form.get("DROP_VOLUME")
+    settings["EQUILIBRATION_TIME"] = request.form.get("EQUILIBRATION_TIME")
+    settings["FLOW_RATE"] = request.form.get("FLOW_RATE")
+    settings["DENSITY"] = request.form.get("DENSITY")
+    settings["NEEDLE_DIAMETER"] = request.form.get("NEEDLE_DIAMETER")
+    settings["SCALE"] = request.form.get("SCALE")
+    settings["DROP_HEIGHT"] = request.form.get("DROP_HEIGHT")
+    ## characterization settings
+    settings["DILUTION_FACTOR"] = request.form.get("DILUTION_FACTOR")
+    settings["EXPLORE_POINTS"] = request.form.get("EXPLORE_POINTS")
+    settings["EXPLOIT_POINTS"] = request.form.get("EXPLOIT_POINTS")
+    settings["WELL_VOLUME"] = request.form.get("WELL_VOLUME")
+
     save_settings(settings)
     session["last_action"] = "Settings updated"
     return redirect(url_for("index"))
@@ -93,9 +110,10 @@ def input_measure_wells():
 
 @app.route("/measure", methods=["POST"])
 def measure():
+    plate_location = request.form.get("plate_location")
     start_well = request.form.get("start_well")
     end_well = request.form.get("end_well")
-    print(f"Measuring wells {start_well} to {end_well}...")
+    print(f"Measuring wells {start_well} to {end_well}, plate at location: {plate_location}...")
     session["last_action"] = "Wells measured"
     return redirect(url_for("index"))
 

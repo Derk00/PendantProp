@@ -57,11 +57,14 @@ def settings():
     settings["EXPLORE_POINTS"] = request.form.get("EXPLORE_POINTS")
     settings["EXPLOIT_POINTS"] = request.form.get("EXPLOIT_POINTS")
     settings["WELL_VOLUME"] = request.form.get("WELL_VOLUME")
-    settings["DYNAMIC_EQUILIBRATION_TIME"] = request.form.get("DYNAMIC_EQUILIBRATION_TIME")
+    settings["DYNAMIC_EQUILIBRATION_TIME"] = request.form.get(
+        "DYNAMIC_EQUILIBRATION_TIME"
+    )
 
     save_settings(settings)
     session["last_action"] = "Settings updated"
     return redirect(url_for("index"))
+
 
 @app.route("/reset_settings", methods=["POST"])
 def reset_settings():
@@ -79,10 +82,15 @@ def input_initialisation():
 @app.route("/initialisation", methods=["POST"])
 def initialisation():
     exp_name = request.form.get("exp_name")
+    settings = load_settings()
+    settings["EXPERIMENT_NAME"] = exp_name
+
     csv_file = request.files.get("csv_file")
+    settings["CONFIG_FILENAME"] = csv_file.filename
     sub_dir = "meta_data"
     save_csv_file(exp_name, sub_dir, csv_file, app)
-    session["exp_name"] = exp_name
+
+    save_settings(settings)
     session["last_action"] = "Initialisation done"
     return redirect(url_for("index"))
 
@@ -95,11 +103,14 @@ def input_formulate():
 @app.route("/formulate", methods=["POST"])
 def formulate():
     csv_file = request.files.get("csv_file")
-    exp_name = session.get("exp_name")
+    settings = load_settings()
+    exp_name = settings.get("EXPERIMENT_NAME")
     if not exp_name:
         abort(400, "Experiment name not found in session")
     sub_dir = "meta_data"
     save_csv_file(exp_name, sub_dir, csv_file, app)
+
+    opentrons_api.formulate()
     session["last_action"] = "Formulation done"
     return redirect(url_for("index"))
 
@@ -114,7 +125,9 @@ def measure():
     plate_location = request.form.get("plate_location")
     start_well = request.form.get("start_well")
     end_well = request.form.get("end_well")
-    print(f"Measuring wells {start_well} to {end_well}, plate at location: {plate_location}...")
+    print(
+        f"Measuring wells {start_well} to {end_well}, plate at location: {plate_location}..."
+    )
     session["last_action"] = "Wells measured"
     return redirect(url_for("index"))
 
@@ -127,7 +140,8 @@ def input_surfactant_characterization():
 @app.route("/characterize", methods=["POST"])
 def characterize():
     csv_file = request.files.get("csv_file")
-    exp_name = session.get("exp_name")
+    settings = load_settings()
+    exp_name = settings["EXPERIMENT_NAME"]
     if not exp_name:
         abort(400, "Experiment name not found in session")
     sub_dir = "meta_data"

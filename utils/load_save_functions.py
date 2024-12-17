@@ -20,14 +20,13 @@ def save_csv_file(exp_name: str, subdir_name: str, csv_file, app):
     csv_file.save(file_path)
 
 
-
 def load_settings(file_name="settings.json"):
     """
     Load settings from json file
 
     :param file_name: File name to load settings from
     """
-    file_path = f'settings/{file_name}'
+    file_path = f"settings/{file_name}"
     if os.path.exists(file_path):
         with open(file_path, "r") as file:
             return json.load(file)
@@ -38,9 +37,9 @@ def save_settings(settings, file_name="settings.json"):
     Save settings to json file
 
     :param settings: Settings to save
-    :param file_name: File name to save settings to 
+    :param file_name: File name to save settings to
     """
-    file_path = f'settings/{file_name}'
+    file_path = f"settings/{file_name}"
     with open(file_path, "w") as file:
         json.dump(settings, file, indent=4)
 

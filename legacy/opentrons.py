@@ -11,6 +11,7 @@ class Opentrons_API:
         self.robot_ip = settings["ROBOT_IP"]
         self.experiment_name = settings["EXPERIMENT_NAME"]
         self.config_filename = settings["CONFIG_FILENAME"]
+        self.upload_folder = settings["UPLOAD_FOLDER"]
         self.headers = {"opentrons-version": "3"}
         self.protocol_url = f"http://{self.robot_ip}:31950/protocols"
         self.ssh_key = "ot2_ssh_key"
@@ -27,18 +28,13 @@ class Opentrons_API:
                 headers=self.headers,
                 files={"files": protocol_file_payload},
             )
-        try:
-            r_dict = json.loads(r.text)
+            r_dict = r.json()
             self.protocol_id = r_dict["data"]["id"]
+            print(r)
             print(f"Protocol ID:\n{self.protocol_id}")
-            return self.protocol_id
-        except:
-            # TODO log it in the output
-            print(f"Error uploading protocol: {r.text}")
-            pass
 
-    def upload_file(self, source_path, destination_path="/var/lib/jupyter/notebooks"):
-        command = f"scp -O -i {self.ssh_key} {source_path} root@{self.robot_ip}:{destination_path}"
+    def upload_file(self, source_path):
+        command = f"scp -O -i {self.ssh_key} {source_path} root@{self.robot_ip}:{self.upload_folder}"
         subprocess.run(command, shell=True)
 
     def create_run_from_protocol(self):
@@ -48,6 +44,7 @@ class Opentrons_API:
             r = requests.post(
                 url=runs_url, headers=self.headers, data=protocol_id_payload
             )
+            print(r)
             r_dict = json.loads(r.text)
             self.run_id = r_dict["data"]["id"]
             print(f"Run ID:\n{self.run_id}")
@@ -61,7 +58,7 @@ class Opentrons_API:
         action_payload = json.dumps({"data": {"actionType": "play"}})
         r = requests.post(url=actions_url, headers=self.headers, data=action_payload)
         # print(f"Request status:\n{r}\n{r.text}")
-        print(f"Protocol {self.protocol_file} is running")
+        # print(f"Protocol {self.protocol_file} is running")
 
     def upload_functions(self):
         function_file = "utils/opentrons_functions.py"
@@ -81,23 +78,34 @@ class Opentrons_API:
         containers_file = "utils/containers.py"
         self.upload_file(source_path=containers_file)
 
+    def delete_protocol(self):
+        protocol_url = f"http://{self.robot_ip}:31950/protocols/{self.protocol_id}"
+        r = requests.delete(url=protocol_url, headers=self.headers)
+        print(f"Protocol {self.protocol_id} deleted")
+
     def calibration(self):
         protocol_file = "calibration.py"
         self.upload_protocol(protocol_file=protocol_file)
         self.create_run_from_protocol()
         self.run_protocol()
+        self.delete_protocol()
 
     def formulate(self):
+        print(
+            f"uploading files for experiment {self.experiment_name} to folder {self.upload_folder}"
+        )
         self.upload_settings()
         self.upload_config()
         self.upload_functions()
         self.upload_containers()
-        load_functions_file = "utils/load_functions.py"
+        load_functions_file = "utils/load_functions2.py"
         self.upload_file(source_path=load_functions_file)
+
         protocol_file = "formulate.py"
         self.upload_protocol(protocol_file=protocol_file)
         self.create_run_from_protocol()
         self.run_protocol()
+        # self.delete_protocol()
         pass
 
     def measure_well(self):

@@ -5,12 +5,9 @@ License: MIT
 e-mail: pim.dankloff@ru.nl
 """
 
-# def pick_up_tip(pipette):
-#     pipette.pick_up_tip()
 
-
-def add(a, b):
-    return a + b
+def pick_up_tip(pipette):
+    pipette.pick_up_tip()
 
 
 # def transfer(pipette, source, destination, volume, touch_tip_speed=40, blow_out=True):

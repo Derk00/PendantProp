@@ -14,5 +14,6 @@
     "EXPLOIT_POINTS": 4,
     "WELL_VOLUME": 200,
     "DYNAMIC_EQUILIBRATION_TIME": "True",
-    "CONFIG_FILENAME": "default.csv"
+    "CONFIG_FILENAME": "default.csv",
+    "UPLOAD_FOLDER": "/var/lib/jupyter/notebooks"
 }

@@ -48,7 +48,7 @@ class OpentronCamera:
 
 
 class PendantDropCamera:
-    # TODO: thread?
+    # TODO: thread? save images
 
     def __init__(self):
         try:

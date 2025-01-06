@@ -105,6 +105,7 @@ class Opentrons_http_api:
             print("Response:", response.json())
 
     def play_run(self):
+        "not needed?"
         print("playing run..")
         runs_url = f"http://{self.ROBOT_IP_ADDRESS}:31950/runs"
         actions_url = f"{runs_url}/{self.RUN_ID}/actions"
@@ -115,6 +116,7 @@ class Opentrons_http_api:
         print(f"\n Response code play run: {response.status_code}")
 
     def get_run_status(self):
+        """not needed?"""
         "\n get run status \n"
         url = f"http://{self.ROBOT_IP_ADDRESS}:31950/runs/{self.RUN_ID}"
         response = requests.get(url=url, headers=self.HEADERS)
@@ -126,6 +128,7 @@ class Opentrons_http_api:
             print(response.text)
 
     def get_commands(self, cursor=0, pageLength=20):
+        """not needed?"""
         print("\n get command types \n")
         response = requests.get(
             url=self.COMMANDS_URL,

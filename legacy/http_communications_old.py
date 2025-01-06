@@ -51,6 +51,23 @@ class Opentrons_http_api:
             for key, file_obj in files.items():
                 file_obj[1].close()
 
+    def delete_protocol(self):
+        """
+        Method to delete protocol, given the protocol ID (attribute of API instance).
+        """
+        print("\n trying to delete protocol \n")
+        url = f"http://{self.ROBOT_IP_ADDRESS}:31950/protocols/{self.PROTOCOL_ID}"
+        response = requests.delete(url, headers=self.HEADERS)
+
+        print(f"Response code: {response.status_code}")
+        if response.status_code == 200:
+            print("Protocol deleted successfully!")
+        elif response.status_code == 404:
+            print("Protocol not found.")
+        else:
+            print("Failed to delete protocol.")
+            print("Response:", response.json())
+
     def create_run(self):
         """
         Method to create a session. Uses the protocol_ID attribute to find the protocol
@@ -71,6 +88,60 @@ class Opentrons_http_api:
             print(f"run ID: {self.RUN_ID}")
         except:
             print("Failed to create run!")
+            print(response.text)
+
+    def delete_run(self):
+        "Method to delete the created run in the API instance."
+
+        url = f"http://{self.ROBOT_IP_ADDRESS}:31950/runs/{self.RUN_ID}"
+        response = requests.delete(url=url, headers=self.HEADERS)
+
+        print(f"Response code: {response.status_code}")
+        if response.status_code == 200:
+            print("Run deleted successfully!")
+        elif response.status_code == 404:
+            print("Run not found.")
+        else:
+            print("Failed to delete run.")
+            print("Response:", response.json())
+
+    def play_run(self):
+        "not needed?"
+        print("playing run..")
+        runs_url = f"http://{self.ROBOT_IP_ADDRESS}:31950/runs"
+        actions_url = f"{runs_url}/{self.RUN_ID}/actions"
+        action_payload = json.dumps({"data": {"actionType": "play"}})
+        response = requests.post(
+            url=actions_url, headers=self.HEADERS, data=action_payload
+        )
+        print(f"\n Response code play run: {response.status_code}")
+
+    def get_run_status(self):
+        """not needed?"""
+        "\n get run status \n"
+        url = f"http://{self.ROBOT_IP_ADDRESS}:31950/runs/{self.RUN_ID}"
+        response = requests.get(url=url, headers=self.HEADERS)
+        try:
+            # print(response.json()["data"]["status"])
+            return response.json()["data"]["status"]
+        except:
+            print("failed to get run details")
+            print(response.text)
+
+    def get_commands(self, cursor=0, pageLength=20):
+        """not needed?"""
+        print("\n get command types \n")
+        response = requests.get(
+            url=self.COMMANDS_URL,
+            headers=self.HEADERS,
+            params={
+                "cursor": cursor,
+                "pageLength": pageLength,
+            },
+        )
+        try:
+            print(response.json()["data"]["commandType"])
+        except:
             print(response.text)
 
     ####### load functions #######
@@ -135,6 +206,16 @@ class Opentrons_http_api:
             )
         return labware_id
 
+    def get_loaded_labwares(self):
+        """
+        get loaded labwares
+        """
+        response = requests.get(
+            url=f"http://{self.ROBOT_IP_ADDRESS}:31950/runs/{self.RUN_ID}/loaded_labware_definitions",
+            headers=self.HEADERS,
+        )
+        return response.json()
+
     def add_labware_definition(self, labware_definition: str):
         labware_path = self.LABWARE_DEFINITIONS_FOLDER
         with open(f"{labware_path}\{labware_definition}", "rb") as file:
@@ -151,9 +232,9 @@ class Opentrons_http_api:
         try:
             for labware_definition in os.listdir(labware_path):
                 self.add_labware_definition(labware_definition)
-            print("\n all labware definitions loaded \n")
+            print("\n all labware definitions loaded")
         except:
-            print("\n failed to load all labware definitions \n")
+            print("\n failed to load all labware definitions")
 
     ####### executable functions #######
     def home(self):

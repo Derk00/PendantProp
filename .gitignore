@@ -1,4 +1,5 @@
 *.pyc
 *.jpg
 *.csv
-ot2_ssh_key
+legacy/ot2_ssh_key
+experiments/**/*.json

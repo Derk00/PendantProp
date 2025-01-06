@@ -43,6 +43,10 @@ def save_settings(settings, file_name="settings.json"):
     with open(file_path, "w") as file:
         json.dump(settings, file, indent=4)
 
+def save_settings_meta_data(settings: dict):
+    file_path = f"experiments/{settings['EXPERIMENT_NAME']}/meta_data/settings.json"
+    with open(file_path, "w") as file:
+        json.dump(settings, file, indent=4)
 
 if __name__ == "__main__":
     settings = load_settings()

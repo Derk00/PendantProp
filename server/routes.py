@@ -11,13 +11,9 @@ from flask import (
     Response,
     jsonify,
 )
-from utils.load_save_functions import save_csv_file, load_settings, save_settings
+from utils.load_save_functions import save_csv_file, load_settings, save_settings, save_settings_meta_data
 from hardware.cameras import OpentronCamera, PendantDropCamera
-from hardware.opentrons import Opentrons_API
 
-
-# initialize the Opentrons API
-opentrons_api = Opentrons_API()
 
 # initialize the Flask app
 app = Flask(__name__)
@@ -88,8 +84,9 @@ def initialisation():
     csv_file = request.files.get("csv_file")
     settings["CONFIG_FILENAME"] = csv_file.filename
     sub_dir = "meta_data"
+    # save data
     save_csv_file(exp_name, sub_dir, csv_file, app)
-
+    save_settings_meta_data(settings=settings)
     save_settings(settings)
     session["last_action"] = "Initialisation done"
     return redirect(url_for("index"))
@@ -110,7 +107,7 @@ def formulate():
     sub_dir = "meta_data"
     save_csv_file(exp_name, sub_dir, csv_file, app)
 
-    opentrons_api.formulate()
+    # opentrons_api.formulate()
     session["last_action"] = "Formulation done"
     return redirect(url_for("index"))
 
@@ -162,7 +159,7 @@ def input_calibration():
 
 @app.route("/calibrate", methods=["POST"])
 def calibrate():
-    opentrons_api.calibration()
+    # opentrons_api.calibration()
     session["last_action"] = "Calibration done"
     return redirect(url_for("index"))
 

@@ -1,13 +1,16 @@
 # TODO list
 # documentation
-# move to / blowout / touch_tip?
+# touch_tip
 # lights
-# remove redunant methods?
 
 import requests
 import json
 import os
 from utils.load_save_functions import load_settings
+from utils.logger import Logger
+
+# initialise logger
+Logger = Logger(name="protocol")
 
 
 class Opentrons_http_api:
@@ -28,25 +31,20 @@ class Opentrons_http_api:
         :param protocol: string, path to protocol file
         :param files: list, array of support files path
         """
-        print("\n trying to upload protocol file \n")
         url = f"http://{self.ROBOT_IP_ADDRESS}:31950/protocols"
         files = {"files": (protocol, open(f"{protocol}", "rb"))}
 
         try:
             response = requests.post(url, headers=self.HEADERS, files=files)
-            print(f"response code: {response.status_code}")
             if response.status_code == 201:
-                print("Protocol uploaded successfully!")
+                Logger.info(f"Protocol uploaded succesfully (ID: {self.PROTOCOL_ID}).")
                 # print("Response:", response.json())
                 self.PROTOCOL_ID = response.json()["data"]["id"]
-                print(f"protocol ID: {self.PROTOCOL_ID}")
             elif response.status_code == 200:
-                print("Protocol exist already.")
+                Logger.info("Protocol already uploaded, using existing protocol.")
                 self.PROTOCOL_ID = response.json()["data"]["id"]
-                print(f"protocol ID: {self.PROTOCOL_ID}")
             else:
-                print("Failed to upload protocol.")
-                print("Response:", response.json())
+                Logger.error(f"Failed to upload protocol \n {response.text}")
         finally:
             for key, file_obj in files.items():
                 file_obj[1].close()
@@ -55,23 +53,19 @@ class Opentrons_http_api:
         """
         Method to create a session. Uses the protocol_ID attribute to find the protocol
         """
-        print("\n trying to create a run \n")
         url = f"http://{self.ROBOT_IP_ADDRESS}:31950/runs"
         protocol_id_payload = json.dumps({"data": {"protocolId": self.PROTOCOL_ID}})
         response = requests.post(
             url=url, headers=self.HEADERS, data=protocol_id_payload
         )
-        print(f"status code: {response.status_code}")
         try:
             self.RUN_ID = response.json()["data"]["id"]
             self.COMMANDS_URL = (
                 f"http://{self.ROBOT_IP_ADDRESS}:31950/runs/{self.RUN_ID}/commands"
             )
-            print("Run created succesfully!")
-            print(f"run ID: {self.RUN_ID}")
+            Logger.info(f"Run created succesfully (ID: {self.RUN_ID}).")
         except:
-            print("Failed to create run!")
-            print(response.text)
+            Logger.error(f"Failed to create run! \n {response.text}")
 
     ####### load functions #######
     def load_pipette(self, name: str, mount: str):
@@ -172,17 +166,17 @@ class Opentrons_http_api:
         try:
             for labware_definition in os.listdir(labware_path):
                 self.add_labware_definition(labware_definition)
-            print("\n all labware definitions added \n")
+            Logger.info("All custom labware definitions added.")
         except:
-            print("\n failed to add all labware definitions \n")
+            Logger.error(f"Failed to add labware definitions.")
 
     ####### executable functions #######
     def home(self):
-        print("\n homing... \n")
         url = f"http://{self.ROBOT_IP_ADDRESS}:31950/robot/home"
         command_dict = {"target": "robot"}
         command_payload = json.dumps(command_dict)
         response = requests.post(url=url, headers=self.HEADERS, data=command_payload)
+        Logger.info("Robot homed.")
 
     def delay(self, seconds: float, minutes=0, message=None, intent="setup"):
         """
@@ -204,7 +198,7 @@ class Opentrons_http_api:
             data=command_payload,
             params={"waitUntilComplete": True},
         )
-        print(response.json())
+        Logger.info(f"Delay of {seconds} seconds & {minutes} minutes.")
 
     def pick_up_tip(self, pipette_id: str, labware_id: str, well: str, intent="setup"):
         "picks up tip on specified pipette"
@@ -407,7 +401,6 @@ class Opentrons_http_api:
         self.upload_protocol(protocol="hardware\opentrons\protocol_placeholder.py")
         self.create_run()
         self.add_all_labware_definitions()
-        # self.home()
 
 
 if __name__ == "__main__":

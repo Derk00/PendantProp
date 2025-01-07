@@ -1,6 +1,9 @@
-from utils.logger import logging
+from utils.logger import Logger
 from hardware.opentrons.containers import *
 from hardware.opentrons.destinations import Well
+
+# initialise logger
+Logger = Logger(name="protocol")
 
 
 class Pipette:
@@ -20,7 +23,7 @@ class Pipette:
 
         # warning if no tips id is provided
         if self.TIPS_INFO == None:
-            logging.warning("No tips information provided for pipette!")
+            Logger.warning("No tips information provided for pipette!")
 
         # set max volume
         if self.PIPETTE_NAME == "p20_single_gen2":
@@ -28,14 +31,14 @@ class Pipette:
         elif self.PIPETTE_NAME == "p1000_single_gen2":
             self.max_volume = 1000
         else:
-            logging.error("Pipette name not recognised!")
+            Logger.error("Pipette name not recognised!")
 
         self.ORDERING = tips_info["ordering"]
         self.well_index = 0
 
     def pick_up_tip(self):
         if self.has_tip:
-            logging.error(
+            Logger.error(
                 f"Could not pick up tip as {self.MOUNT} pipette ({self.PIPETTE_NAME}) already has one!"
             )
             return
@@ -47,13 +50,13 @@ class Pipette:
         )
         self.has_tip = True
         self.well_index += 1
-        logging.info(
+        Logger.info(
             f"{self.MOUNT} pipette ({self.PIPETTE_NAME}) picked up tip from well {self.ORDERING[self.well_index - 1]} on {self.TIPS_INFO['labware_name']}."
         )
 
     def drop_tip(self, return_tip=False):
         if not self.has_tip:
-            logging.error("Pipette does not have a tip to drop!")
+            Logger.error("Pipette does not have a tip to drop!")
             return
 
         if return_tip:
@@ -62,12 +65,12 @@ class Pipette:
                 labware_id=self.TIPS_ID,
                 well=self.ORDERING[self.well_index - 1],
             )
-            logging.info(
+            Logger.info(
                 f"{self.MOUNT} pipette ({self.PIPETTE_NAME}) returned tip to well {self.ORDERING[self.well_index - 1]} on {self.TIPS_INFO['labware_name']}."
             )
         else:
             self.api.drop_tip(pipette_id=self.PIPETTE_ID)
-            logging.info(
+            Logger.info(
                 f"{self.MOUNT} pipette ({self.PIPETTE_NAME}) dropped tip into trash."
             )
         self.has_tip = False
@@ -76,20 +79,20 @@ class Pipette:
 
         # check if pipette has tip
         if not self.has_tip:
-            logging.error(
+            Logger.error(
                 f"{self.MOUNT} pipette ({self.PIPETTE_NAME}) does not have a tip! Cancelled aspirating step."
             )
             return
 
         # check if volume exceeds pipette capacity
         if self.volume + volume > self.max_volume:
-            logging.error(
+            Logger.error(
                 f"{self.MOUNT} pipette ({self.PIPETTE_NAME}) does not have enough free volume to aspirate {volume} uL! Cancelled aspirating step."
             )
             return
 
         if self.clean == False:
-            logging.warning(
+            Logger.warning(
                 f"{self.MOUNT} pipette ({self.PIPETTE_NAME}) is not clean! Aspirating anyway..."
             )
 
@@ -104,19 +107,19 @@ class Pipette:
         self.current_solution = source.solution_name
         self.clean = False
         self.volume += volume
-        logging.info(
+        Logger.info(
             f"Aspirated {volume} uL from {source.solution_name} (well {source.well } on {source.LABWARE_NAME}) with {self.MOUNT} pipette ({self.PIPETTE_NAME})"
         )
 
     def dispense(self, destination: Well, volume: float):
         if not self.has_tip:
-            logging.error(
+            Logger.error(
                 f"{self.MOUNT} pipette ({self.PIPETTE_NAME}) does not have a tip! Cancelled dispensing step."
             )
             return
 
         if self.volume - volume < 0:
-            logging.error(
+            Logger.error(
                 f"{self.MOUNT} pipette ({self.PIPETTE_NAME}) does not have enough volume to dispense {volume} uL! Cancelled dispensing step."
             )
             return
@@ -129,12 +132,12 @@ class Pipette:
         )
         destination.dispense(volume)  # update volume in destination
         self.volume -= volume
-        logging.info(
+        Logger.info(
             f"Dispensed {volume} uL into well {destination.WELL} on {destination.LABWARE_NAME} with {self.MOUNT} pipette ({self.PIPETTE_NAME})"
         )
 
     def transfer(self, source: Container, destination: Well, volume: float):
-        logging.info(
+        Logger.info(
             f"Transferring {volume} uL from {source.solution_name} (well {source.well} on {source.LABWARE_NAME}) to well {destination.WELL} on {destination.LABWARE_NAME} with {self.MOUNT} pipette ({self.PIPETTE_NAME})"
         )
         self.aspirate(source, volume)

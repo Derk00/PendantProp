@@ -1,14 +1,11 @@
 """
 TODO
 ----
-- make i messed up by changing the version of aionotify (opentrons requires 0.2.0, but have pip upgraded to 0.3.1)
-
+- maybe i messed up by changing the version of aionotify (opentrons requires 0.2.0, but have pip upgraded to 0.3.1)
+- all caps for constants
 """
 
 import numpy as np
-from opentrons import protocol_api
-from opentrons.types import Location
-import atexit
 
 __author__ = "Pim Dankloff"
 __copyright__ = "Copyright 2024, Pim Dankloff"
@@ -24,6 +21,7 @@ class Container:
     def __init__(
         self,
         solution_name: str,
+        labware_info: dict,
         well: str,
         initial_volume_mL: float,
         inner_diameter_mm: float,
@@ -34,13 +32,15 @@ class Container:
         self.inner_diameter_mm = inner_diameter_mm
         self.initial_height_mm = self.update_liquid_height()
         self.height_mm = self.initial_height_mm
+        self.LABWARE_ID = labware_info["labware_id"]
+        self.LABWARE_NAME = labware_info["labware_name"]
         # atexit.register(self.print_heights)
 
-    def aspirate(self, volume: float) -> Location:
+    def aspirate(self, volume: float):
         self.volume_mL -= volume * 1e-3
         self.update_liquid_height()
 
-    def dispense(self, volume: float) -> Location:
+    def dispense(self, volume: float):
         self.volume_mL += volume * 1e-3
         self.update_liquid_height()
 
@@ -68,10 +68,13 @@ class Eppendorf(Container):
     def __init__(
         self,
         solution_name: str,
+        labware_info: dict,
         well: str,
         initial_volume_mL: float,
     ):
-        super().__init__(solution_name, well, initial_volume_mL, inner_diameter_mm=10)
+        super().__init__(
+            solution_name, labware_info, well, initial_volume_mL, inner_diameter_mm=10
+        )
 
     def update_liquid_height(self):
         # TODO fix
@@ -116,9 +119,19 @@ class Eppendorf(Container):
 
 
 class FalconTube15(Container):
-    def __init__(self, solution_name: str, well: str, initial_volume_mL: float):
+    def __init__(
+        self,
+        solution_name: str,
+        labware_info: dict,
+        well: str,
+        initial_volume_mL: float,
+    ):
         super().__init__(
-            solution_name, well, initial_volume_mL, inner_diameter_mm=15.25
+            solution_name,
+            labware_info,
+            well,
+            initial_volume_mL,
+            inner_diameter_mm=15.25,
         )
 
     def update_liquid_height(self):
@@ -136,10 +149,13 @@ class FalconTube50(Container):
     def __init__(
         self,
         solution_name: str,
+        labware_info: dict,
         well: str,
         initial_volume_mL: float,
     ):
-        super().__init__(solution_name, well, initial_volume_mL, inner_diameter_mm=28)
+        super().__init__(
+            solution_name, labware_info, well, initial_volume_mL, inner_diameter_mm=28
+        )
 
     def update_liquid_height(self):
         dead_volume_mL = 5
@@ -156,10 +172,13 @@ class GlassVial(Container):
     def __init__(
         self,
         solution_name: str,
+        labware_info: dict,
         well: str,
         initial_volume_mL: float,
     ):
-        super().__init__(solution_name, well, initial_volume_mL, inner_diameter_mm=18)
+        super().__init__(
+            solution_name, labware_info, well, initial_volume_mL, inner_diameter_mm=18
+        )
 
     def update_liquid_height(self):
         self.height_mm = (

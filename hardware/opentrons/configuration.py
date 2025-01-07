@@ -1,38 +1,13 @@
 import pandas as pd
 import os
 from hardware.opentrons.containers import *
+from hardware.opentrons.destinations import Well
+from hardware.opentrons.pipette import Pipette
 from utils.load_save_functions import load_settings
 
-
-class Pipette:
-    def __init__(
-        self, http_api, mount: str, pipette_name: str, pipette_id: str, tips_id: str
-    ):
-        self.api = http_api
-        self.MOUNT = mount
-        self.PIPETTE_NAME = pipette_name
-        self.PIPETTE_ID = pipette_id
-        self.TIPS_ID = tips_id
-        self.has_tip = False
-
-        # set max volume
-        if self.PIPETTE_NAME == "p20_single_gen2":
-            self.max_volume = 20
-        elif self.PIPETTE_NAME == "p1000_single_gen2":
-            self.max_volume = 1000
-        else:
-            print("Pipette not recognised")
-
-    def pick_up_tip(self):
-        try:
-            self.api.pick_up_tip(
-                tip_labware_id=self.TIPS_ID,
-                tip_well_name="A1",
-                pipette_id=self.PIPETTE_ID,
-            )
-            self.has_tip = True
-        except:
-            print("Error picking up tip")
+# TODO
+# - pipette in different file?
+# - labware ordering?
 
 
 class Configuration:
@@ -48,6 +23,7 @@ class Configuration:
         self.LEFT_PIPETTE_NAME = "p20_single_gen2"
         self.RIGHT_PIPETTE_ID = None
         self.LEFT_PIPETTE_ID = None
+        self.LABWARE = None
 
     def load_config_file(self):
         return pd.read_csv(self.FILE_PATH_CONFIG)
@@ -60,6 +36,7 @@ class Configuration:
         return False
 
     def load_pipettes(self):
+
         self.RIGHT_PIPETTE_ID = self.api.load_pipette(
             name=self.RIGHT_PIPETTE_NAME, mount="right"
         )
@@ -68,7 +45,7 @@ class Configuration:
             mount="right",
             pipette_name=self.RIGHT_PIPETTE_NAME,
             pipette_id=self.RIGHT_PIPETTE_ID,
-            tips_id="test",
+            tips_info=self.LABWARE["tips P1000, 1"],
         )
 
         self.LEFT_PIPETTE_ID = self.api.load_pipette(
@@ -79,7 +56,7 @@ class Configuration:
             mount="left",
             pipette_name=self.LEFT_PIPETTE_NAME,
             pipette_id=self.LEFT_PIPETTE_ID,
-            tips_id="test",
+            tips_info=self.LABWARE["tips P20, 1"],
         )
         return {"right": right_pipette, "left": left_pipette}
 
@@ -102,24 +79,26 @@ class Configuration:
 
             # check if labware is custom
             custom_labware = self.check_if_custom_labware(labware_file)
-            print(f"labware file {labware_file} is custom: {custom_labware}")
 
-            labware_id = self.api.load_labware(
-                labware_name=labware_file,
+            labware_info = self.api.load_labware(
+                labware_name=labware_name,
+                labware_file=labware_file,
                 location=position,
                 custom_labware=custom_labware,
             )
-            labware[labware_name] = labware_id
-        return labware
+            labware[labware_name] = labware_info
 
-    def load_containers(self, labware):
+            self.LABWARE = labware
+        return self.LABWARE
+
+    def load_containers(self):
 
         containers = {}
         layout = self.LAYOUT
 
         # Define a mapping from labware name to container class
         labware_mapping = {
-            "tube rack": FalconTube15,  # TODO fix this to tube rack 15 mL
+            "tube rack 15 mL": FalconTube15,
             "eppendorf rack": Eppendorf,
             "glass vial rack": GlassVial,
             "tube rack 50 mL": FalconTube50,
@@ -129,21 +108,29 @@ class Configuration:
             if function == "container":  # check if function is container
                 name_solution = layout.loc[i, "solution"]
                 labware_name = layout.loc[i, "labware name"]
+                labware_info = self.LABWARE[labware_name]
                 well = layout.loc[i, "well"]
                 initial_volume = layout.loc[i, "initial volume (mL)"]
                 container_class = labware_mapping.get(labware_name)
 
                 containers[name_solution] = container_class(
                     solution_name=name_solution,
+                    labware_info=labware_info,
                     well=well,
                     initial_volume_mL=initial_volume,
                 )
         return containers
 
-    def load_configuration(self):
-        labware = self.load_labware()
-        return {
-            "labware": labware,
-            "pipettes": self.load_pipettes(),
-            "containers": self.load_containers(labware=labware),
-        }
+    def load_destinations(self):
+        destinations = {}
+        layout = self.LAYOUT
+
+        for i, function in enumerate(layout["function"]):
+            if function == "target":  # TODO -> target or destination?
+                labware_name = layout.loc[i, "labware name"]
+                labware_info = self.LABWARE[labware_name]
+                location = labware_info["location"]
+                for well in labware_info["ordering"]:
+                    well_id = f"{location}{well}"
+                    destinations[well_id] = Well(well, labware_info)
+        return destinations

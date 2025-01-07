@@ -99,7 +99,9 @@ class Opentrons_http_api:
             print(f"failed to load pipette {name}: \n{response.text}")
         return pipette_id
 
-    def load_labware(self, labware_name: str, location: int, custom_labware=False):
+    def load_labware(
+        self, labware_name: str, labware_file: str, location: int, custom_labware=False
+    ):
         """
         loads labware for a current run.
         """
@@ -113,7 +115,7 @@ class Opentrons_http_api:
                 "commandType": "loadLabware",
                 "params": {
                     "location": {"slotName": str(location)},
-                    "loadName": labware_name,
+                    "loadName": labware_file,
                     "namespace": namespace,
                     "version": 1,
                 },
@@ -127,13 +129,32 @@ class Opentrons_http_api:
             data=command_payload,
             params={"waitUntilComplete": True},
         )
+
         try:
-            labware_id = response.json()["data"]["result"]["labwareId"]
+            response_result = response.json()["data"]["result"]
+            ordering = response_result["definition"]["ordering"]
+            flatten_ordering = [
+                well for row in ordering for well in row
+            ]  # flatten ordering, column wise
+
+            labware_info = {
+                "labware_name": labware_name,
+                "labware_file": labware_file,
+                "location": location,
+                "labware_id": response_result["labwareId"],
+                "ordering": flatten_ordering,
+                "well_diameter": response_result["definition"]["wells"]["A1"][
+                    "diameter"
+                ],
+                "max_volume": response_result["definition"]["wells"]["A1"][
+                    "totalLiquidVolume"
+                ],
+            }
         except:
             print(
-                f"failed to load labware {labware_name} on slot {location}. \n {response.text}"
+                f"failed to load labware {labware_file} on slot {location}. \n {response.text}"
             )
-        return labware_id
+        return labware_info
 
     def add_labware_definition(self, labware_definition: str):
         labware_path = self.LABWARE_DEFINITIONS_FOLDER
@@ -151,9 +172,9 @@ class Opentrons_http_api:
         try:
             for labware_definition in os.listdir(labware_path):
                 self.add_labware_definition(labware_definition)
-            print("\n all labware definitions loaded \n")
+            print("\n all labware definitions added \n")
         except:
-            print("\n failed to load all labware definitions \n")
+            print("\n failed to add all labware definitions \n")
 
     ####### executable functions #######
     def home(self):
@@ -185,16 +206,14 @@ class Opentrons_http_api:
         )
         print(response.json())
 
-    def pick_up_tip(
-        self, tip_labware_id: str, tip_well_name: str, pipette_id: str, intent="setup"
-    ):
+    def pick_up_tip(self, pipette_id: str, labware_id: str, well: str, intent="setup"):
         "picks up tip on specified pipette"
         command_dict = {
             "data": {
                 "commandType": "pickUpTip",
                 "params": {
-                    "labwareId": tip_labware_id,
-                    "wellName": tip_well_name,
+                    "labwareId": labware_id,
+                    "wellName": well,
                     "wellLocation": {
                         "origin": "top",
                         "offset": {"x": 0, "y": 0, "z": 0},
@@ -246,7 +265,6 @@ class Opentrons_http_api:
             data=command_payload,
             params={"waitUntilComplete": True},
         )
-        print(response.json())
 
     def aspirate(
         self,

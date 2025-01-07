@@ -3,3 +3,4 @@
 *.csv
 legacy/ot2_ssh_key
 experiments/**/*.json
+experiments/**/*.log

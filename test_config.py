@@ -15,5 +15,6 @@ right_pipette = pipettes["right"]
 ## excutable robot commands
 api.home()
 right_pipette.pick_up_tip()
-right_pipette.transfer(containers["water"], containers["4A1"], 100)
+right_pipette.move_to_well(container=containers["water"])
+# right_pipette.transfer(containers["water"], containers["4A1"], 100)
 right_pipette.drop_tip(return_tip=True)

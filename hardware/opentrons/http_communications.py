@@ -371,7 +371,12 @@ class Opentrons_http_api:
         )
 
     def move_to_well(
-        self, pipette_id: str, labware_id: str, well: str, offset: dict, intent="setup"
+        self,
+        pipette_id: str,
+        labware_id: str,
+        well: str,
+        offset: dict = dict(x=0, y=0, z=0),
+        intent="setup",
     ):
         """
         move to

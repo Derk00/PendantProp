@@ -154,8 +154,18 @@ class Pipette:
         self.aspirate(source, volume)
         self.dispense(destination, source, volume)
 
+    def move_to_well(self, container: Container):
+        self.api.move_to_well(
+            pipette_id=self.PIPETTE_ID,
+            labware_id=container.LABWARE_ID,
+            well=container.WELL,
+        )
+
     def touch_tip(self, container: Container):
         pass
+
+    # def touch_tip(self, container: Container):
+    #     self.api.move_xyz
 
     def __str__(self):
         return f"""

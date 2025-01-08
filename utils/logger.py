@@ -14,22 +14,24 @@ class Logger:
         self.logger = logging.getLogger(name)
         self.logger.setLevel(logging.INFO)
 
-        # Create file handler
-        file_handler = logging.FileHandler(f"{self.file_path}/{self.name}.log")
-        file_handler.setLevel(logging.INFO)
+        # Check if the logger already has handlers to avoid duplicate logs
+        if not self.logger.handlers:
+            # Create file handler
+            file_handler = logging.FileHandler(f"{self.file_path}/{self.name}.log")
+            file_handler.setLevel(logging.INFO)
 
-        # Create stream handler
-        stream_handler = logging.StreamHandler()
-        stream_handler.setLevel(logging.INFO)
+            # Create stream handler
+            stream_handler = logging.StreamHandler()
+            stream_handler.setLevel(logging.INFO)
 
-        # Create formatter and add it to the handlers
-        formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
-        file_handler.setFormatter(formatter)
-        stream_handler.setFormatter(formatter)
+            # Create formatter and add it to the handlers
+            formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+            file_handler.setFormatter(formatter)
+            stream_handler.setFormatter(formatter)
 
-        # Add handlers to the logger
-        self.logger.addHandler(file_handler)
-        self.logger.addHandler(stream_handler)
+            # Add handlers to the logger
+            self.logger.addHandler(file_handler)
+            self.logger.addHandler(stream_handler)
 
     def info(self, message: str):
         self.logger.info(message)

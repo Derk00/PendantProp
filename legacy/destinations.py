@@ -25,7 +25,6 @@ class Well:
             name=self.WELL_ID,
             file_path=f"experiments/{settings['EXPERIMENT_NAME']}/data/{self.WELL_ID}",
         )
-        print(self.logger)
 
     def dispense(self, volume: float, source: Container):
         """

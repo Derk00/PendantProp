@@ -9,13 +9,6 @@ import os
 from utils.load_save_functions import load_settings
 from utils.logger import Logger
 
-# initialise logger
-settings = load_settings()
-Logger = Logger(
-    name="protocol",
-    file_path=f'experiments/{settings["EXPERIMENT_NAME"]}/meta_data',
-)
-
 
 class Opentrons_http_api:
     def __init__(self):
@@ -26,14 +19,15 @@ class Opentrons_http_api:
         self.PROTOCOL_ID = None
         self.RUN_ID = None
         self.COMMANDS_URL = None
+        self.logger = Logger(
+            name="protocol",
+            file_path=f'experiments/{settings["EXPERIMENT_NAME"]}/meta_data',
+        )
 
     ####### protocol management #######
     def upload_protocol(self, protocol: str):
         """
-        Method to upload protocol + help files (.py, .json, .csv)
-
-        :param protocol: string, path to protocol file
-        :param files: list, array of support files path
+        Method to upload protocol
         """
         url = f"http://{self.ROBOT_IP_ADDRESS}:31950/protocols"
         files = {"files": (protocol, open(f"{protocol}", "rb"))}
@@ -41,14 +35,16 @@ class Opentrons_http_api:
         try:
             response = requests.post(url, headers=self.HEADERS, files=files)
             if response.status_code == 201:
-                Logger.info(f"Protocol uploaded succesfully (ID: {self.PROTOCOL_ID}).")
+                self.logger.info(
+                    f"Protocol uploaded succesfully (ID: {self.PROTOCOL_ID})."
+                )
                 # print("Response:", response.json())
                 self.PROTOCOL_ID = response.json()["data"]["id"]
             elif response.status_code == 200:
-                Logger.info("Protocol already uploaded, using existing protocol.")
+                self.logger.info("Protocol already uploaded, using existing protocol.")
                 self.PROTOCOL_ID = response.json()["data"]["id"]
             else:
-                Logger.error(f"Failed to upload protocol \n {response.text}")
+                self.logger.error(f"Failed to upload protocol \n {response.text}")
         finally:
             for key, file_obj in files.items():
                 file_obj[1].close()
@@ -67,9 +63,9 @@ class Opentrons_http_api:
             self.COMMANDS_URL = (
                 f"http://{self.ROBOT_IP_ADDRESS}:31950/runs/{self.RUN_ID}/commands"
             )
-            Logger.info(f"Run created succesfully (ID: {self.RUN_ID}).")
+            self.logger.info(f"Run created succesfully (ID: {self.RUN_ID}).")
         except:
-            Logger.error(f"Failed to create run! \n {response.text}")
+            self.logger.error(f"Failed to create run! \n {response.text}")
 
     ####### load functions #######
     def load_pipette(self, name: str, mount: str):
@@ -147,6 +143,7 @@ class Opentrons_http_api:
                 "max_volume": response_result["definition"]["wells"]["A1"][
                     "totalLiquidVolume"
                 ],
+                "depth": response_result["definition"]["wells"]["A1"]["depth"],
             }
         except:
             print(
@@ -170,9 +167,9 @@ class Opentrons_http_api:
         try:
             for labware_definition in os.listdir(labware_path):
                 self.add_labware_definition(labware_definition)
-            Logger.info("All custom labware definitions added.")
+            self.logger.info("All custom labware definitions added.")
         except:
-            Logger.error(f"Failed to add labware definitions.")
+            self.logger.error(f"Failed to add labware definitions.")
 
     ####### executable functions #######
     def home(self):
@@ -180,7 +177,7 @@ class Opentrons_http_api:
         command_dict = {"target": "robot"}
         command_payload = json.dumps(command_dict)
         response = requests.post(url=url, headers=self.HEADERS, data=command_payload)
-        Logger.info("Robot homed.")
+        self.logger.info("Robot homed.")
 
     def delay(self, seconds: float, minutes=0, message=None, intent="setup"):
         """
@@ -202,7 +199,7 @@ class Opentrons_http_api:
             data=command_payload,
             params={"waitUntilComplete": True},
         )
-        Logger.info(f"Delay of {seconds} seconds & {minutes} minutes.")
+        self.logger.info(f"Delay of {seconds} seconds & {minutes} minutes.")
 
     def pick_up_tip(self, pipette_id: str, labware_id: str, well: str, intent="setup"):
         "picks up tip on specified pipette"

@@ -1,7 +1,7 @@
 from utils.logger import Logger
 from utils.load_save_functions import load_settings
 from hardware.opentrons.containers import *
-from hardware.opentrons.destinations import Well
+from hardware.opentrons.http_communications import Opentrons_http_api
 
 # initialise logger
 settings = load_settings()
@@ -13,7 +13,12 @@ Logger = Logger(
 
 class Pipette:
     def __init__(
-        self, http_api, mount: str, pipette_name: str, pipette_id: str, tips_info: dict
+        self,
+        http_api: Opentrons_http_api,
+        mount: str,
+        pipette_name: str,
+        pipette_id: str,
+        tips_info: dict,
     ):
         self.api = http_api
         self.MOUNT = mount
@@ -104,8 +109,9 @@ class Pipette:
         self.api.aspirate(
             pipette_id=self.PIPETTE_ID,
             labware_id=source.LABWARE_ID,
-            well=source.well,
+            well=source.WELL,
             volume=volume,
+            depth=source.height_mm - source.DEPTH,
         )
         # update information:
         source.aspirate(volume)
@@ -113,10 +119,10 @@ class Pipette:
         self.clean = False
         self.volume += volume
         Logger.info(
-            f"Aspirated {volume} uL from {source.solution_name} (well {source.well } on {source.LABWARE_NAME}) with {self.MOUNT} pipette ({self.PIPETTE_NAME})"
+            f"Aspirated {volume} uL from {source.solution_name} (well {source.WELL } on {source.LABWARE_NAME}) with {self.MOUNT} pipette ({self.PIPETTE_NAME})"
         )
 
-    def dispense(self, destination: Well, source: Container, volume: float):
+    def dispense(self, destination: Container, source: Container, volume: float):
         if not self.has_tip:
             Logger.error(
                 f"{self.MOUNT} pipette ({self.PIPETTE_NAME}) does not have a tip! Cancelled dispensing step."
@@ -141,16 +147,20 @@ class Pipette:
             f"Dispensed {volume} uL into well {destination.WELL_ID} with {self.MOUNT} pipette ({self.PIPETTE_NAME})"
         )
 
-    def transfer(self, source: Container, destination: Well, volume: float):
+    def transfer(self, source: Container, destination: Container, volume: float):
         Logger.info(
-            f"Transferring {volume} uL from {source.solution_name} (well {source.well} on {source.LABWARE_NAME}) to well {destination.WELL} on {destination.LABWARE_NAME} with {self.MOUNT} pipette ({self.PIPETTE_NAME})"
+            f"Transferring {volume} uL from {source.solution_name} (well {source.WELL} on {source.LABWARE_NAME}) to well {destination.WELL} on {destination.LABWARE_NAME} with {self.MOUNT} pipette ({self.PIPETTE_NAME})"
         )
         self.aspirate(source, volume)
         self.dispense(destination, source, volume)
 
+    def touch_tip(self, container: Container):
+        pass
+
     def __str__(self):
         return f"""
         Pipette object
+
         Mount: {self.MOUNT}
         Pipette name: {self.PIPETTE_NAME}
         Pipette ID: {self.PIPETTE_ID}

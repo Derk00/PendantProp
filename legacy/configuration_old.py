@@ -147,3 +147,22 @@ class Configuration:
         except Exception as e:
             self.logger.error(f"Error loading containers: {e}")
             return None
+
+    # def load_destinations(self):
+    #     try:
+    #         destinations = {}
+    #         layout = self.LAYOUT
+
+    #         for i, function in enumerate(layout["function"]):
+    #             if function == "target":  # TODO -> target or destination?
+    #                 labware_name = layout.loc[i, "labware name"]
+    #                 labware_info = self.LABWARE[labware_name]
+    #                 location = labware_info["location"]
+    #                 for well in labware_info["ordering"]:
+    #                     well_id = f"{location}{well}"
+    #                     destinations[well_id] = Well(well, labware_info)
+    #         self.logger.info("Destinations loaded successfully")
+    #         return destinations
+    #     except Exception as e:
+    #         self.logger.error(f"Error loading destinations: {e}")
+    #         return None

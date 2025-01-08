@@ -4,26 +4,45 @@ import os
 
 
 class Logger:
-    def __init__(self, name: str):
+    def __init__(self, name: str, file_path: str):
         os.environ["NUMEXPR_MAX_THREADS"] = (
             "8"  # set the number of threads for numexpr (avoid logger warning)
         )
         self.settings = load_settings()
         self.name = name
-        self.file_path_log = (
-            f'experiments/{self.settings["EXPERIMENT_NAME"]}/meta_data/{self.name}.log'
-        )
-        logging.basicConfig(
-            level=logging.INFO,
-            format="%(asctime)s - %(levelname)s - %(message)s",
-            handlers=[logging.FileHandler(self.file_path_log), logging.StreamHandler()],
-        )
+        self.file_path = file_path
+        self.logger = logging.getLogger(name)
+        self.logger.setLevel(logging.INFO)
+
+        # Create file handler
+        file_handler = logging.FileHandler(f"{self.file_path}/{self.name}.log")
+        file_handler.setLevel(logging.INFO)
+
+        # Create stream handler
+        stream_handler = logging.StreamHandler()
+        stream_handler.setLevel(logging.INFO)
+
+        # Create formatter and add it to the handlers
+        formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+        file_handler.setFormatter(formatter)
+        stream_handler.setFormatter(formatter)
+
+        # Add handlers to the logger
+        self.logger.addHandler(file_handler)
+        self.logger.addHandler(stream_handler)
 
     def info(self, message: str):
-        logging.info(message)
+        self.logger.info(message)
 
     def warning(self, message: str):
-        logging.warning(message)
+        self.logger.warning(message)
 
     def error(self, message: str):
-        logging.error(message)
+        self.logger.error(message)
+
+    def __str__(self):
+        return f"""
+        Logger object
+        Name: {self.name}
+        Log file path: {self.file_path}
+        """

@@ -1,9 +1,14 @@
 from utils.logger import Logger
+from utils.load_save_functions import load_settings
 from hardware.opentrons.containers import *
 from hardware.opentrons.destinations import Well
 
 # initialise logger
-Logger = Logger(name="protocol")
+settings = load_settings()
+Logger = Logger(
+    name="protocol",
+    file_path=f'experiments/{settings["EXPERIMENT_NAME"]}/meta_data',
+)
 
 
 class Pipette:
@@ -111,7 +116,7 @@ class Pipette:
             f"Aspirated {volume} uL from {source.solution_name} (well {source.well } on {source.LABWARE_NAME}) with {self.MOUNT} pipette ({self.PIPETTE_NAME})"
         )
 
-    def dispense(self, destination: Well, volume: float):
+    def dispense(self, destination: Well, source: Container, volume: float):
         if not self.has_tip:
             Logger.error(
                 f"{self.MOUNT} pipette ({self.PIPETTE_NAME}) does not have a tip! Cancelled dispensing step."
@@ -130,10 +135,10 @@ class Pipette:
             well=destination.WELL,
             volume=volume,
         )
-        destination.dispense(volume)  # update volume in destination
         self.volume -= volume
+        destination.dispense(volume=volume, source=source)
         Logger.info(
-            f"Dispensed {volume} uL into well {destination.WELL} on {destination.LABWARE_NAME} with {self.MOUNT} pipette ({self.PIPETTE_NAME})"
+            f"Dispensed {volume} uL into well {destination.WELL_ID} with {self.MOUNT} pipette ({self.PIPETTE_NAME})"
         )
 
     def transfer(self, source: Container, destination: Well, volume: float):
@@ -141,7 +146,7 @@ class Pipette:
             f"Transferring {volume} uL from {source.solution_name} (well {source.well} on {source.LABWARE_NAME}) to well {destination.WELL} on {destination.LABWARE_NAME} with {self.MOUNT} pipette ({self.PIPETTE_NAME})"
         )
         self.aspirate(source, volume)
-        self.dispense(destination, volume)
+        self.dispense(destination, source, volume)
 
     def __str__(self):
         return f"""

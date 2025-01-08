@@ -6,32 +6,26 @@ TODO
 """
 
 import numpy as np
-
-__author__ = "Pim Dankloff"
-__copyright__ = "Copyright 2024, Pim Dankloff"
-__credits__ = ["Pim Dankloff"]
-__license__ = "MIT"
-__version__ = "1.0.3"
-__maintainer__ = "Pim Dankloff"
-__email__ = "pim.dankloff@ru.nl"
-__status__ = "Production"
+from utils.logger import Logger
+from utils.load_save_functions import load_settings
 
 
 class Container:
     def __init__(
         self,
-        solution_name: str,
         labware_info: dict,
         well: str,
         initial_volume_mL: float,
         inner_diameter_mm: float,
+        solution_name: str = None,
     ):
-        self.solution_name = solution_name
+        settings = load_settings()
         self.well = well
         self.volume_mL = initial_volume_mL
         self.inner_diameter_mm = inner_diameter_mm
         self.initial_height_mm = self.update_liquid_height()
         self.height_mm = self.initial_height_mm
+        self.solution_name = solution_name
         self.LABWARE_ID = labware_info["labware_id"]
         self.LABWARE_NAME = labware_info["labware_name"]
         # atexit.register(self.print_heights)

@@ -6,7 +6,11 @@ from hardware.opentrons.pipette import Pipette
 from utils.load_save_functions import load_settings
 from utils.logger import Logger
 
-Logger = Logger(name="protocol")
+settings = load_settings()
+Logger = Logger(
+    name="protocol",
+    file_path=f'experiments/{settings["EXPERIMENT_NAME"]}/meta_data',
+)
 
 
 class Configuration:

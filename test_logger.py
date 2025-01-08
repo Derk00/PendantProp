@@ -1,6 +1,8 @@
 from utils.logger import Logger
 
-logger = Logger("test_logger")
-logger.info("This is an info message.")
-logger.warning("This is a warning message.")
-logger.error("This is an error message.")
+
+log_1 = Logger("test_1", file_path="experiments")
+log_2 = Logger("test_2", file_path="experiments")
+
+log_1.info("test_1")
+log_2.info("test_2")

@@ -51,7 +51,7 @@ class Configuration:
                 mount="right",
                 pipette_name=self.RIGHT_PIPETTE_NAME,
                 pipette_id=self.RIGHT_PIPETTE_ID,
-                tips_info=self.LABWARE["tips P1000, 1"],
+                tips_info=self.LABWARE["tips P1000, 1"],  # create list?
             )
 
             self.LEFT_PIPETTE_ID = self.api.load_pipette(

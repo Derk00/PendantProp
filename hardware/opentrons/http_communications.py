@@ -23,6 +23,8 @@ class Opentrons_http_api:
             name="protocol",
             file_path=f'experiments/{settings["EXPERIMENT_NAME"]}/meta_data',
         )
+        self.X_OFFSET = 0
+        self.Y_OFFSET = 0
 
     ####### protocol management #######
     def upload_protocol(self, protocol: str):
@@ -201,7 +203,14 @@ class Opentrons_http_api:
         )
         self.logger.info(f"Delay of {seconds} seconds & {minutes} minutes.")
 
-    def pick_up_tip(self, pipette_id: str, labware_id: str, well: str, intent="setup"):
+    def pick_up_tip(
+        self,
+        pipette_id: str,
+        labware_id: str,
+        well: str,
+        offset: dict = dict(x=0, y=0, z=0),
+        intent="setup",
+    ):
         "picks up tip on specified pipette"
         command_dict = {
             "data": {
@@ -211,7 +220,7 @@ class Opentrons_http_api:
                     "wellName": well,
                     "wellLocation": {
                         "origin": "top",
-                        "offset": {"x": 0, "y": 0, "z": 0},
+                        "offset": offset,
                         "waitUntilComplete": True,
                     },
                     "pipetteId": pipette_id,
@@ -228,15 +237,16 @@ class Opentrons_http_api:
         )
 
     def drop_tip(
-        self, pipette_id: str, labware_id="fixedTrash", well="A1", intent="setup"
+        self,
+        pipette_id: str,
+        labware_id="fixedTrash",
+        well="A1",
+        offset: dict = dict(x=0, y=0, z=0),
+        intent="setup",
     ):
         """
         drop tip of specified pipette
         """
-        if labware_id == "fixedTrash":
-            depth = 0
-        else:
-            depth = -50
         command_dict = {
             "data": {
                 "commandType": "dropTip",
@@ -245,7 +255,7 @@ class Opentrons_http_api:
                     "wellName": well,
                     "wellLocation": {
                         "origin": "top",
-                        "offset": {"x": 0, "y": 0, "z": depth},
+                        "offset": offset,
                         "waitUntilComplete": True,
                     },
                     "pipetteId": pipette_id,
@@ -269,11 +279,14 @@ class Opentrons_http_api:
         well: str,
         depth=-5,
         flow_rate=100,
+        offset: dict = dict(x=0, y=0, z=0),
         intent="setup",
     ):
         """
         aspirate
         """
+        offset_depth = offset.copy()
+        offset_depth["z"] = depth + offset["z"]
         command_dict = {
             "data": {
                 "commandType": "aspirate",
@@ -282,7 +295,7 @@ class Opentrons_http_api:
                     "wellName": well,
                     "wellLocation": {
                         "origin": "top",
-                        "offset": {"x": 0, "y": 0, "z": depth},
+                        "offset": offset_depth,
                     },
                     "flowRate": flow_rate,
                     "volume": volume,
@@ -307,11 +320,14 @@ class Opentrons_http_api:
         well: str,
         depth=-5,
         flow_rate=100,
+        offset: dict = dict(x=0, y=0, z=0),
         intent="setup",
     ):
         """
         dispense
         """
+        offset_depth = offset.copy()
+        offset_depth["z"] = depth + offset["z"]
         command_dict = {
             "data": {
                 "commandType": "dispense",
@@ -320,7 +336,7 @@ class Opentrons_http_api:
                     "wellName": well,
                     "wellLocation": {
                         "origin": "top",
-                        "offset": {"x": 0, "y": 0, "z": depth},
+                        "offset": offset_depth,
                     },
                     "flowRate": flow_rate,
                     "volume": volume,
@@ -343,9 +359,11 @@ class Opentrons_http_api:
         labware_id: str,
         well: str,
         depth: float,
+        offset: dict = dict(x=0, y=0, z=0),
         flow_rate=30,
         intent="setup",
     ):
+        offset["z"] = depth + offset["z"]
         command_dict = {
             "data": {
                 "commandType": "blowout",
@@ -354,7 +372,7 @@ class Opentrons_http_api:
                     "wellName": well,
                     "wellLocation": {
                         "origin": "top",
-                        "offset": {"x": 0, "y": 0, "z": depth},
+                        "offset": offset,
                     },
                     "flowRate": flow_rate,
                     "pipetteId": pipette_id,
@@ -381,6 +399,7 @@ class Opentrons_http_api:
         """
         move to
         """
+
         command_dict = {
             "data": {
                 "commandType": "moveToWell",

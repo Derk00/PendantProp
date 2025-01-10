@@ -7,6 +7,7 @@ mock_labware_info_well = {
     "labware_id": "test",
     "labware_name": "Mock labware",
     "well_diameter": 18,
+    "depth": 10.9,
 }
 
 mock_labware_info_ft15 = {
@@ -15,6 +16,7 @@ mock_labware_info_ft15 = {
     "labware_id": "test_2",
     "labware_name": "Mock labware ft",
     "well_diameter": 25,
+    "depth": 117,
 }
 
 
@@ -30,11 +32,4 @@ ft15 = FalconTube15(
     solution_name="water",
 )
 
-print(well)
-print(ft15)
-ft15.aspirate(volume=1000)
-print("after aspiration \n")
-print(ft15)
-well.dispense(2000, source=ft15)
-print("after dispense \n")
-print(well)
+print(well.height_mm - well.DEPTH)

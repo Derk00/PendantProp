@@ -11,15 +11,9 @@ pipettes = config.load_pipettes()
 containers = config.load_containers()
 
 right_pipette = pipettes["right"]
-left_pipette = pipettes["left"]
 
-print(containers["4A1"].DEPTH)
-print(containers["4A1"].height_mm)
-
-# # ## excutable robot commands
+## excutable robot commands
 api.home()
-right_pipette.pick_up_tip()
-right_pipette.transfer(
-    volume=100, source=containers["water"], destination=containers["4A1"]
-)
-right_pipette.drop_tip(return_tip=True)
+right_pipette.move_to_tip(well="C3")
+# right_pipette.pick_up_tip(well="C3")
+# right_pipette.drop_tip(return_tip=True)

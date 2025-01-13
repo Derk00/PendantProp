@@ -394,6 +394,7 @@ class Opentrons_http_api:
         labware_id: str,
         well: str,
         offset: dict = dict(x=0, y=0, z=0),
+        speed=None,
         intent="setup",
     ):
         """
@@ -412,6 +413,8 @@ class Opentrons_http_api:
                 "intent": intent,
             }
         }
+        if speed is not None:
+            command_dict["data"]["params"]["speed"] = speed
         command_payload = json.dumps(command_dict)
         response = requests.post(
             url=self.COMMANDS_URL,

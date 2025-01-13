@@ -18,7 +18,8 @@ class Container:
         labware_info: dict,
         well: str,
         initial_volume_mL: float = 0,
-        solution_name: str = "Empty",
+        solution_name: str = "empty",
+        concentration: any = "pure",
         inner_diameter_mm: float = None,
     ):
         # Settings
@@ -44,7 +45,7 @@ class Container:
         self.volume_mL = self.INITIAL_VOLUME_ML
         self.height_mm = self.INITIAL_HEIGHT_MM
         self.solution_name = solution_name
-        self.concentration = 0
+        self.concentration = concentration  # TODO this can be extended to mixtures
 
         # Create logger (container & protocol)
         os.makedirs(f"experiments/{settings['EXPERIMENT_NAME']}/data", exist_ok=True)
@@ -60,9 +61,6 @@ class Container:
             name="protocol",
             file_path=f'experiments/{settings["EXPERIMENT_NAME"]}/meta_data',
         )
-
-        # log initialisation
-        # self.container_logger.info("Container: initialized!")
 
     def aspirate(self, volume: float):
         if self.volume_mL < (volume * 1e-3):
@@ -82,7 +80,22 @@ class Container:
             return
         self.volume_mL += volume * 1e-3
         self.update_liquid_height(volume_mL=self.volume_mL)
-        self.solution_name = source.solution_name
+
+        if source.concentration != "pure":
+            # case source contains solution
+            self.concentration = (
+                float(source.concentration) * volume * 1e-3 / self.volume_mL
+            )
+            self.solution_name = source.solution_name
+        elif self.concentration != "pure":
+            # case container contains solution and source is water
+            self.concentration = self.concentration * volume * 1e-3 / self.volume_mL
+            self.solution_name = self.solution_name
+        else:
+            # case container is empty and source is pure
+            self.concentration = "pure"
+            self.solution_name = source.solution_name
+
         self.container_logger.info(
             f"Container: Dispensed {volume} uL into this container from source {source.WELL} of {source.LABWARE_NAME} ({source.WELL_ID}) containing {source.solution_name}"
         )
@@ -101,9 +114,9 @@ class Container:
         Inner diameter: {self.INNER_DIAMETER_MM} mm
         Well: {self.WELL}
         Location: {self.LOCATION}
-        Initial height: {self.INITIAL_HEIGHT_MM} mm
-        Current height: {self.height_mm} mm
-        Current volume: {self.volume_mL * 1e3} uL
+        Initial height: {self.INITIAL_HEIGHT_MM:.2f} mm
+        Current height: {self.height_mm:.2f} mm
+        Current volume: {self.volume_mL * 1e3:.0f} uL
         """
 
 
@@ -114,12 +127,14 @@ class FalconTube15(Container):
         well: str,
         initial_volume_mL: float,
         solution_name: str,
+        concentration: any,
     ):
         super().__init__(
             labware_info,
             well,
             initial_volume_mL,
             solution_name,
+            concentration,
             inner_diameter_mm=15.25,
         )
         self.CONTAINER_TYPE = "Falcon tube 15 mL"
@@ -142,12 +157,14 @@ class FalconTube50(Container):
         well: str,
         initial_volume_mL: float,
         solution_name: str,
+        concentration: any,
     ):
         super().__init__(
             labware_info,
             well,
             initial_volume_mL,
             solution_name,
+            concentration,
             inner_diameter_mm=28,
         )
         self.CONTAINER_TYPE = "Falcon tube 50 mL"
@@ -170,12 +187,14 @@ class GlassVial(Container):
         well: str,
         initial_volume_mL: float,
         solution_name: str,
+        concentration: any,
     ):
         super().__init__(
             labware_info,
             well,
             initial_volume_mL,
             solution_name,
+            concentration,
             inner_diameter_mm=18,
         )
         self.CONTAINER_TYPE = "Glass Vial"

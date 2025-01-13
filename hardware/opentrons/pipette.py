@@ -95,7 +95,7 @@ class Pipette:
             )
         self.has_tip = False
 
-    def aspirate(self, volume: float, source: Container):
+    def aspirate(self, volume: float, source: Container, touch_tip=False):
 
         # check if pipette has tip
         if not self.has_tip:
@@ -115,6 +115,7 @@ class Pipette:
             self.protocol_logger.warning(
                 f"{self.MOUNT} pipette ({self.PIPETTE_NAME}) is not clean! Aspirating anyway..."
             )
+
         self.api.aspirate(
             pipette_id=self.PIPETTE_ID,
             labware_id=source.LABWARE_ID,
@@ -123,6 +124,9 @@ class Pipette:
             depth=source.height_mm - source.DEPTH,
             offset=self.OFFSET,
         )
+        if touch_tip:
+            self.touch_tip(container=source)
+
         # update information:
         source.aspirate(volume)
         self.current_solution = source.solution_name
@@ -132,7 +136,9 @@ class Pipette:
             f"Aspirated {volume} uL from {source.solution_name} (well {source.WELL } on {source.LABWARE_NAME}) with {self.MOUNT} pipette ({self.PIPETTE_NAME})"
         )
 
-    def dispense(self, volume: float, source: Container, destination: Container):
+    def dispense(
+        self, volume: float, source: Container, destination: Container, touch_tip=False
+    ):
         if not self.has_tip:
             self.protocol_logger.error(
                 f"{self.MOUNT} pipette ({self.PIPETTE_NAME}) does not have a tip! Cancelled dispensing step."
@@ -152,18 +158,26 @@ class Pipette:
             depth=destination.height_mm - destination.DEPTH,
             offset=self.OFFSET,
         )
+        if touch_tip:
+            self.touch_tip(container=destination)
+
+        # update information
         self.volume -= volume
         destination.dispense(volume=volume, source=source)
         self.protocol_logger.info(
             f"Dispensed {volume} uL into well {destination.WELL_ID} with {self.MOUNT} pipette ({self.PIPETTE_NAME})"
         )
 
-    def transfer(self, volume: float, source: Container, destination: Container):
+    def transfer(
+        self, volume: float, source: Container, destination: Container, touch_tip=False
+    ):
         self.protocol_logger.info(
             f"Transferring {volume} uL from {source.solution_name} (well {source.WELL} on {source.LABWARE_NAME}) to well {destination.WELL} on {destination.LABWARE_NAME} with {self.MOUNT} pipette ({self.PIPETTE_NAME})"
         )
-        self.aspirate(volume=volume, source=source)
-        self.dispense(volume=volume, source=source, destination=destination)
+        self.aspirate(volume=volume, source=source, touch_tip=touch_tip)
+        self.dispense(
+            volume=volume, source=source, destination=destination, touch_tip=touch_tip
+        )
 
     def move_to_well(self, container: Container):
         self.api.move_to_well(
@@ -182,8 +196,53 @@ class Pipette:
             offset=offset,
         )
 
-    def touch_tip(self, container: Container):
-        pass
+    def touch_tip(self, container: Container, repeat=1):
+        if not self.has_tip:
+            self.protocol_logger.error("no tip attached to perform touch_tip!")
+            return
+        depth = (
+            0.05 * container.DEPTH
+        )  # little depth to ensure the tip touches the wall of the container
+        initial_offset = self.OFFSET.copy()
+        initial_offset["z"] -= 0.05 * container.DEPTH
+        self.api.move_to_well(
+            pipette_id=self.PIPETTE_ID,
+            labware_id=container.LABWARE_ID,
+            well=container.WELL,
+            offset=initial_offset,
+        )
+        radius = container.WELL_DIAMETER / 2
+        radius = radius * 0.9  # safety TODO fix
+        for n in range(repeat):
+            for i in range(4):
+                offset = (
+                    self.OFFSET.copy()
+                )  # Create a copy of the offset to avoid modifying the original
+                offset["z"] -= depth
+                if i == 0:
+                    offset["x"] -= radius
+                elif i == 1:
+                    offset["x"] += radius
+                elif i == 2:
+                    offset["y"] -= radius
+                elif i == 3:
+                    offset["y"] += radius
+                self.api.move_to_well(
+                    pipette_id=self.PIPETTE_ID,
+                    labware_id=container.LABWARE_ID,
+                    well=container.WELL,
+                    offset=offset,
+                    speed=50,
+                )
+                self.api.move_to_well(
+                    pipette_id=self.PIPETTE_ID,
+                    labware_id=container.LABWARE_ID,
+                    well=container.WELL,
+                    offset=initial_offset,
+                    speed=50,
+                )
+
+        self.protocol_logger.info(f"touched tip, repeated {repeat} times")
 
     # def touch_tip(self, container: Container):
     #     self.api.move_xyz

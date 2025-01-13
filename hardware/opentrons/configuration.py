@@ -81,7 +81,7 @@ class Configuration:
                 elif self.ROBOT_TYPE == "Flex":
                     position = str(position)
                 else:
-                    print("Robot type not recognised")
+                    self.logger.error("robot type not known")
 
                 labware_df = layout[layout["deck position"] == position]
                 labware_file = labware_df["labware file"].values[0]
@@ -109,7 +109,6 @@ class Configuration:
         try:
             containers = {}
             layout = self.LAYOUT
-
             # Define a mapping from labware name to container class
             labware_mapping = {
                 "tube rack 15 mL": FalconTube15,
@@ -120,6 +119,7 @@ class Configuration:
             for i, function in enumerate(layout["function"]):
                 if function == "source":  # check if function is source
                     name_solution = layout.loc[i, "solution"]
+                    concentration = layout.loc[i, "concentration (mM)"]
                     labware_name = layout.loc[i, "labware name"]
                     labware_info = self.LABWARE[labware_name]
                     well = layout.loc[i, "well"]
@@ -131,6 +131,7 @@ class Configuration:
                         well=well,
                         initial_volume_mL=initial_volume,
                         solution_name=name_solution,
+                        concentration=concentration,
                     )
                 elif function == "destination":  # check if function is destination
                     labware_name = layout.loc[i, "labware name"]

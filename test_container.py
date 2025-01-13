@@ -25,11 +25,24 @@ well = PlateWell(
     well="A1",
 )
 
-ft15 = FalconTube15(
+ft15_water = FalconTube15(
     labware_info=mock_labware_info_ft15,
     well="A1",
     initial_volume_mL=10,
     solution_name="water",
+    concentration="pure",
 )
 
-print(well.height_mm - well.DEPTH)
+ft15_sds = FalconTube15(
+    labware_info=mock_labware_info_ft15,
+    well="A1",
+    initial_volume_mL=10,
+    solution_name="sds",
+    concentration=10,
+)
+
+# ft15_sds.aspirate(100)
+
+print(well.dispense(100, source=ft15_sds))
+print(well.dispense(100, source=ft15_water))
+print(well)

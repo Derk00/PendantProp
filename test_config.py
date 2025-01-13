@@ -13,13 +13,29 @@ containers = config.load_containers()
 right_pipette = pipettes["right"]
 left_pipette = pipettes["left"]
 
-print(containers["4A1"].DEPTH)
-print(containers["4A1"].height_mm)
+print(containers["4A1"])
+print(containers["water"])
 
 # # ## excutable robot commands
 api.home()
 right_pipette.pick_up_tip()
 right_pipette.transfer(
-    volume=100, source=containers["water"], destination=containers["4A1"]
+    volume=100,
+    source=containers["water"],
+    destination=containers["4A1"],
+    touch_tip=True,
 )
+right_pipette.transfer(
+    volume=100,
+    source=containers["phenol red"],
+    destination=containers["4A1"],
+    touch_tip=True,
+)
+
 right_pipette.drop_tip(return_tip=True)
+
+print(containers["4A1"])
+print(containers["water"])
+# right_pipette.touch_tip(container=containers["water"], repeat=3)
+# right_pipette.touch_tip(container=containers["4A1"], repeat=2)
+# right_pipette.drop_tip(return_tip=True)

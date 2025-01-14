@@ -95,7 +95,7 @@ class Pipette:
             )
         self.has_tip = False
 
-    def aspirate(self, volume: float, source: Container, touch_tip=False):
+    def aspirate(self, volume: float, source: Container, touch_tip=False, mix=None):
 
         # check if pipette has tip
         if not self.has_tip:
@@ -115,6 +115,13 @@ class Pipette:
             self.protocol_logger.warning(
                 f"{self.MOUNT} pipette ({self.PIPETTE_NAME}) is not clean! Aspirating anyway..."
             )
+        if mix:
+            mix_order, mix_volume, mix_repeat = mix
+            if mix_order not in ["before", "after", "both"]:
+                self.protocol_logger.warning(f"mix_order {mix_order} not recognized.")
+
+        if mix and (mix_order == "before" or mix_order=="both"):
+            self.mixing(container=source, volume=mix_volume, repeat=mix_repeat)
 
         self.api.aspirate(
             pipette_id=self.PIPETTE_ID,
@@ -124,6 +131,9 @@ class Pipette:
             depth=source.height_mm - source.DEPTH,
             offset=self.OFFSET,
         )
+        if mix and (mix_order == "after" or mix_order == "both"):
+            self.mixing(container=source, volume=mix_volume, repeat=mix_repeat)
+
         if touch_tip:
             self.touch_tip(container=source)
 
@@ -137,7 +147,7 @@ class Pipette:
         )
 
     def dispense(
-        self, volume: float, source: Container, destination: Container, touch_tip=False
+        self, volume: float, source: Container, destination: Container, touch_tip=False, mix=None, blow_out = False
     ):
         if not self.has_tip:
             self.protocol_logger.error(
@@ -150,6 +160,15 @@ class Pipette:
                 f"{self.MOUNT} pipette ({self.PIPETTE_NAME}) does not have enough volume to dispense {volume} uL! Cancelled dispensing step."
             )
             return
+        
+        if mix:
+            mix_order, mix_volume, mix_repeat = mix
+            if mix_order not in ["before", "after", "both"]:
+                self.protocol_logger.warning(f"mix_order {mix_order} not recognized.")
+
+        if mix and (mix_order == "before" or mix_order=="both"):
+            self.mixing(container=source, volume=mix_volume, repeat=mix_repeat)
+        
         self.api.dispense(
             pipette_id=self.PIPETTE_ID,
             labware_id=destination.LABWARE_ID,
@@ -158,6 +177,10 @@ class Pipette:
             depth=destination.height_mm - destination.DEPTH,
             offset=self.OFFSET,
         )
+        if mix and (mix_order == "after" or mix_order == "both"):
+            self.mixing(container=source, volume=mix_volume, repeat=mix_repeat)
+        if blow_out:
+            self.blow_out(container=destination)
         if touch_tip:
             self.touch_tip(container=destination)
 
@@ -169,14 +192,14 @@ class Pipette:
         )
 
     def transfer(
-        self, volume: float, source: Container, destination: Container, touch_tip=False
+        self, volume: float, source: Container, destination: Container, touch_tip=False, mix = None
     ):
         self.protocol_logger.info(
             f"Transferring {volume} uL from {source.solution_name} (well {source.WELL} on {source.LABWARE_NAME}) to well {destination.WELL} on {destination.LABWARE_NAME} with {self.MOUNT} pipette ({self.PIPETTE_NAME})"
         )
-        self.aspirate(volume=volume, source=source, touch_tip=touch_tip)
+        self.aspirate(volume=volume, source=source, touch_tip=touch_tip, mix=mix)
         self.dispense(
-            volume=volume, source=source, destination=destination, touch_tip=touch_tip
+            volume=volume, source=source, destination=destination, touch_tip=touch_tip, mix=mix
         )
 
     def move_to_well(self, container: Container):
@@ -244,8 +267,20 @@ class Pipette:
 
         self.protocol_logger.info(f"touched tip, repeated {repeat} times")
 
-    # def touch_tip(self, container: Container):
-    #     self.api.move_xyz
+    def mixing(self, container: Container, volume, repeat):
+        for n in range(repeat):
+            self.aspirate(volume=volume, source=container)
+            self.dispense(volume=volume, source=container, destination=container)
+        self.protocol_logger.info(f"mixing in {container.WELL_ID}, with volume {volume}, repeated {repeat} times")
+
+    def blow_out(self, container: Container):
+        self.api.blow_out(
+            pipette_id=self.PIPETTE_ID,
+            labware_id=container.LABWARE_ID,
+            well = container.WELL,
+            offset= self.OFFSET
+        )
+        self.protocol_logger.info(f"blow out done in container {container.WELL_ID}")
 
     def __str__(self):
         return f"""

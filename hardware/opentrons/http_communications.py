@@ -102,7 +102,7 @@ class Opentrons_http_api:
         loads labware for a current run.
         """
         if custom_labware == True:
-            namespace = "custom_beta"  # TODO find this directory
+            namespace = "custom_beta"
         else:
             namespace = "opentrons"
 
@@ -125,9 +125,9 @@ class Opentrons_http_api:
             data=command_payload,
             params={"waitUntilComplete": True},
         )
-
         try:
             response_result = response.json()["data"]["result"]
+
             ordering = response_result["definition"]["ordering"]
             flatten_ordering = [
                 well for row in ordering for well in row
@@ -360,7 +360,7 @@ class Opentrons_http_api:
         well: str,
         depth: float = 0,
         offset: dict = dict(x=0, y=0, z=0),
-        flow_rate=30,
+        flow_rate=200,
         intent="setup",
     ):
         offset["z"] = depth + offset["z"]

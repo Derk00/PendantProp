@@ -4,11 +4,12 @@ from hardware.opentrons.containers import *
 from hardware.opentrons.pipette import Pipette
 from utils.load_save_functions import load_settings
 from utils.logger import Logger
+from hardware.opentrons.http_communications import Opentrons_http_api
 
 
 class Configuration:
 
-    def __init__(self, http_api=None):
+    def __init__(self, http_api: Opentrons_http_api):
         settings = load_settings()
         self.api = http_api
         self.LABWARE_DEFINITIONS_FOLDER = self.api.LABWARE_DEFINITIONS_FOLDER
@@ -142,6 +143,11 @@ class Configuration:
                         containers[well_id] = PlateWell(
                             labware_info=labware_info, well=well
                         )
+                elif function == "drop_stage":
+                    labware_name = layout.loc[i, "labware name"]
+                    labware_info = self.LABWARE[labware_name]
+                    location = labware_info["location"]
+                    containers[labware_name] = DropStage(labware_info=labware_info)
 
             self.logger.info("Containers loaded successfully")
             return containers

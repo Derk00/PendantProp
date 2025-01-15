@@ -11,6 +11,8 @@ import os
 from utils.logger import Logger
 from utils.load_save_functions import load_settings
 
+# from hardware.opentrons.pipette import Pipette
+
 
 class Container:
     def __init__(
@@ -99,6 +101,9 @@ class Container:
         self.container_logger.info(
             f"Container: Dispensed {volume} uL into this container from source {source.WELL} of {source.LABWARE_NAME} ({source.WELL_ID}) containing {source.solution_name}"
         )
+
+    def measure_pendant_drop(self, p20_pipette, drop_volume: float):
+        pass
 
     def update_liquid_height(self, volume_mL):
         raise NotImplementedError("This method should be implemented by subclasses")
@@ -220,3 +225,48 @@ class PlateWell(Container):
     def update_liquid_height(self, volume_mL):
         self.height_mm = 1e3 * (volume_mL) / (np.pi * (self.INNER_DIAMETER_MM / 2) ** 2)
         return self.height_mm
+
+
+class DropStage:
+    def __init__(self, labware_info):
+        settings = load_settings()
+        self.LABWARE_ID = labware_info["labware_id"]
+        self.LABWARE_NAME = labware_info["labware_name"]
+        self.LOCATION = labware_info["location"]
+        self.CONTAINER_TYPE = "Cuvette"
+        self.WELL = "A1"  # always 1 well in drop stage
+        self.WELL_ID = f"{self.LOCATION}{self.WELL}"
+        self.DEPTH = labware_info["depth"]
+        self.height_mm = labware_info["depth"]
+        self.MAX_VOLUME = labware_info["max_volume"]
+        os.makedirs(f"experiments/{settings['EXPERIMENT_NAME']}/data", exist_ok=True)
+        os.makedirs(
+            f"experiments/{settings['EXPERIMENT_NAME']}/data/{self.LABWARE_NAME}",
+            exist_ok=True,
+        )
+        self.container_logger = Logger(
+            name=self.LABWARE_NAME,
+            file_path=f"experiments/{settings['EXPERIMENT_NAME']}/data/{self.LABWARE_NAME}",
+        )
+
+    def aspirate(self, volume):
+        self.container_logger.warning(
+            "Attempted to aspirate from drop stage. This should never be the case! Only dispense"
+        )
+        pass
+
+    def dispense(self, volume, source: Container):
+        self.container_logger.info(
+            f"Drop stage: measured pendant drop from {source.WELL_ID}. See container log for more details."
+        )
+        pass
+
+    def __str__(self):
+        return f"""
+        Drop stage object
+
+        Container type: {self.CONTAINER_TYPE}
+        Well: {self.WELL}
+        Location: {self.LOCATION}
+        Drop height:  {self.height_mm:.2f} mm
+        """

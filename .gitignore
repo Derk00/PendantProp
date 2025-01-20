@@ -1,6 +1,7 @@
 *.pyc
 *.jpg
 *.csv
+*.png
 legacy/ot2_ssh_key
 experiments/**/*.json
 experiments/**/*.log

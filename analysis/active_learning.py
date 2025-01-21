@@ -147,7 +147,7 @@ class Baysu:
         ax.set_xscale("log")
         ax.set_xlabel("concentration (mM)", fontsize = 15)
         ax.set_ylabel("surface tension (mN/m)", fontsize = 15)
-        file_path = f"C:/Users/pim/Documents/PhD/Code/PendantProp/figures/{filename}.png" #TODO exp folder + relative file name
+        file_path = f"C:/Users/pim/Documents/PhD/Code/PendantProp/graphic/{filename}.png" #TODO exp folder + relative file name
         fig.savefig(file_path, dpi=1200)
 
         self.logger.info("analysis: plotted fit")
@@ -186,7 +186,7 @@ class Baysu:
         ax2.set_ylabel(r"Mutual Information", fontsize=15)
         ax2.legend()
         ax1.legend()
-        file_path = f"C:/Users/pim/Documents/PhD/Code/PendantProp/figures/{filename}.png" #TODO exp folder + relative file name
+        file_path = f"C:/Users/pim/Documents/PhD/Code/PendantProp/graphic/{filename}.png" #TODO exp folder + relative file name
         fig.savefig(file_path, dpi=1200)
 
     def get_properties(self):

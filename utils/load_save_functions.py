@@ -14,7 +14,7 @@ def save_csv_file(exp_name: str, subdir_name: str, csv_file, app):
     :return: None
     """
 
-    exp_dir = os.path.join(app.config["UPLOAD_FOLDER"], f"{exp_name}\{subdir_name}")
+    exp_dir = os.path.join(app.config["UPLOAD_FOLDER"], f"{exp_name}/{subdir_name}") #TODO check
     os.makedirs(exp_dir, exist_ok=True)
     file_path = os.path.join(exp_dir, csv_file.filename)
     csv_file.save(file_path)

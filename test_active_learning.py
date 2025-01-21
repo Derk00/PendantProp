@@ -32,15 +32,17 @@ g_samples = g_noisy[sample_indices]
 
 obs = (cS_samples, g_samples)
 
-# baysu
-parameters = ["cmc", "gamma_max", "Kad"]
-baysu = Baysu(model=szyszkowski_model, parameters=parameters)
+print("test")
 
-for round in [1,2,3,4]:
-    baysu.fit(obs=obs, outlier_check=True)
-    x, y = baysu.bayesian_suggestion()
-    baysu.plot_suggestion(x, filename=f"round_{round}")
-    obs = (jnp.append(obs[0], x), jnp.append(obs[1], y))
+# baysu
+# parameters = ["cmc", "gamma_max", "Kad"]
+# baysu = Baysu(model=szyszkowski_model, parameters=parameters)
+
+# for round in [1,2,3,4]:
+#     baysu.fit(obs=obs, outlier_check=True)
+#     x, y = baysu.bayesian_suggestion()
+#     baysu.plot_suggestion(x, filename=f"round_{round}")
+#     obs = (jnp.append(obs[0], x), jnp.append(obs[1], y))
 
     
 # baysu.plot_suggestion(x_suggestion=x, filename="round 1")

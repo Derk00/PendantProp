@@ -148,6 +148,12 @@ class Configuration:
                     labware_info = self.LABWARE[labware_name]
                     location = labware_info["location"]
                     containers[labware_name] = DropStage(labware_info=labware_info)
+                
+                elif function == "light_holder":
+                    labware_name = layout.loc[i, "labware name"]
+                    labware_info = self.LABWARE[labware_name]
+                    location = labware_info["location"]
+                    containers[labware_name] = LightHolder(labware_info=labware_info)
 
             self.logger.info("Containers loaded successfully")
             return containers

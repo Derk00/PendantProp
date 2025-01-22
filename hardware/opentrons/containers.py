@@ -270,3 +270,37 @@ class DropStage:
         Location: {self.LOCATION}
         Drop height:  {self.height_mm:.2f} mm
         """
+
+
+class LightHolder:
+    def __init__(self, labware_info):
+        settings = load_settings()
+        self.LABWARE_ID = labware_info["labware_id"]
+        self.LABWARE_NAME = labware_info["labware_name"]
+        self.LOCATION = labware_info["location"]
+        self.CONTAINER_TYPE = "Light holder"
+        self.WELL = "A1"  # place holder
+        self.WELL_ID = f"{self.LOCATION}{self.WELL}"
+        self.DEPTH = labware_info["depth"]
+        self.height_mm = labware_info["depth"]
+        self.MAX_VOLUME = labware_info["max_volume"]
+
+    def aspirate(self, volume):
+        print(
+            "Attempted to aspirate from light holder. This should never be the case!"
+        )
+        pass
+
+    def dispense(self, volume, source: Container):
+        print(
+            "Attempted to dispense from light holder. This should never be the case!"
+        )
+        pass
+
+    def __str__(self):
+        return f"""
+        Light holder object:
+
+        Container type: {self.CONTAINER_TYPE}
+        Location: {self.LOCATION}
+        """

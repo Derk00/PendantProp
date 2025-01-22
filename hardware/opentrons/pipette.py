@@ -94,6 +94,7 @@ class Pipette:
                 f"{self.MOUNT} pipette ({self.PIPETTE_NAME}) dropped tip into trash."
             )
         self.has_tip = False
+        self.volume = 0
 
     def aspirate(self, volume: float, source: Container, touch_tip=False, mix=None):
 
@@ -159,6 +160,7 @@ class Pipette:
         touch_tip=False,
         mix=None,
         blow_out=False,
+        depth_offset = 0
     ):
         if not self.has_tip:
             self.protocol_logger.error(
@@ -185,7 +187,7 @@ class Pipette:
             labware_id=destination.LABWARE_ID,
             well=destination.WELL,
             volume=volume,
-            depth=destination.height_mm - destination.DEPTH,
+            depth=destination.height_mm - destination.DEPTH + depth_offset,
             offset=self.OFFSET,
         )
         if mix and (mix_order == "after" or mix_order == "both"):
@@ -224,12 +226,19 @@ class Pipette:
             blow_out=blow_out,
         )
 
-    def move_to_well(self, container: Container):
+    def move_to_well(self, container: Container, offset = None):
+        if offset == None:
+            offset_move = self.OFFSET.copy()
+        else:
+            offset_move = self.OFFSET.copy()
+            for key in offset:
+                offset_move[key] += offset[key]
+        
         self.api.move_to_well(
             pipette_id=self.PIPETTE_ID,
             labware_id=container.LABWARE_ID,
             well=container.WELL,
-            offset=self.OFFSET,
+            offset=offset_move,
         )
 
     def move_to_tip(self, well: str, offset: dict = dict(x=0, y=0, z=0)):

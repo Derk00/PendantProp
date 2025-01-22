@@ -10,6 +10,7 @@ from scipy.spatial import KDTree
 import cv2
 import itertools
 from scipy.spatial.distance import euclidean
+import os
 
 from utils.load_save_functions import load_settings
 from utils.logger import Logger
@@ -17,16 +18,17 @@ from utils.logger import Logger
 
 class PendantDropAnalysis:
     def __init__(self):
-        settings = load_settings()
-        self.density = settings["DENSITY"]
-        self.scale = settings["SCALE"]
+        self.settings = load_settings()
+        self.density = self.settings["DENSITY"]
+        self.scale = self.settings["SCALE"]
         self.gravity_constant = 9.80665
         self.file_path = None
         self.raw_image = None
         self.processed_image = None
         self.analysis_image = None
         self.logger = Logger(
-            name="analysis", file_path="C:/Users/pim/Documents/PhD/Code/PendantProp"
+            name="analysis",
+            file_path=f'experiments/{self.settings["EXPERIMENT_NAME"]}/meta_data',
         )
 
     def select_image(self):
@@ -47,7 +49,7 @@ class PendantDropAnalysis:
         self.raw_image = cv2.imread(self.file_path)
 
     def process_image(self):
-        
+
         blur = cv2.GaussianBlur(self.raw_image, (9, 9), 0)
         canny = cv2.Canny(blur, 10, 10)
         edged = cv2.dilate(canny, None, iterations=1)
@@ -271,6 +273,12 @@ class PendantDropAnalysis:
                 - (0.20970)
             )
         return Hin
+    
+    def image2st(self, file_path_raw_image: str, file_path_save_analysis_image = None):
+        self.load_raw_image(file_path=file_path_raw_image)
+        self.process_image()
+        self.analyse()
+        self.save_analysis_image(file_path=file_path_save_analysis_image)
 
     def show_raw_image(self):
         cv2.imshow(winname=self.file_path, mat=self.raw_image)
@@ -287,6 +295,7 @@ class PendantDropAnalysis:
         cv2.waitKey(0)
         cv2.destroyAllWindows()
 
-    def save_analysis_image(self, file_path: str):
+    def save_analysis_image(self, file_path = None):
+        if file_path == None:
+            file_path = f"experiments/{self.settings['EXPERIMENT_NAME']}/data/analysis.jpg"
         cv2.imwrite(file_path, self.analysis_image)
-

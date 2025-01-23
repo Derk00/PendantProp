@@ -2,7 +2,7 @@ from utils.logger import Logger
 from utils.load_save_functions import load_settings
 from hardware.opentrons.containers import *
 from hardware.opentrons.http_communications import Opentrons_http_api
-
+from hardware.cameras import PendantDropCamera
 
 class Pipette:
     def __init__(
@@ -160,7 +160,8 @@ class Pipette:
         touch_tip=False,
         mix=None,
         blow_out=False,
-        depth_offset = 0
+        depth_offset=0,
+        flow_rate=100,
     ):
         if not self.has_tip:
             self.protocol_logger.error(
@@ -189,6 +190,7 @@ class Pipette:
             volume=volume,
             depth=destination.height_mm - destination.DEPTH + depth_offset,
             offset=self.OFFSET,
+            flow_rate=flow_rate,
         )
         if mix and (mix_order == "after" or mix_order == "both"):
             self.mixing(container=destination, mix=mix)
@@ -226,14 +228,14 @@ class Pipette:
             blow_out=blow_out,
         )
 
-    def move_to_well(self, container: Container, offset = None):
+    def move_to_well(self, container: Container, offset=None):
         if offset == None:
             offset_move = self.OFFSET.copy()
         else:
             offset_move = self.OFFSET.copy()
             for key in offset:
                 offset_move[key] += offset[key]
-        
+
         self.api.move_to_well(
             pipette_id=self.PIPETTE_ID,
             labware_id=container.LABWARE_ID,
@@ -322,16 +324,30 @@ class Pipette:
         destination: Container,
         drop_volume: float,
         delay: float,
-        dispense_rate: float,
+        flow_rate: float,
+        depth_offset: float = -25.4,
     ):
         # TODO implement dispense rate
         if self.PIPETTE_NAME != "p20_single_gen2":
             self.protocol_logger.error(
                 f"Wrong pipette is given. Expected p20_single_gen2 but got {self.PIPETTE_NAME}"
             )
+        pendant_drop_camera = PendantDropCamera()
+        pendant_drop_camera.initialize_measurement(well_id=source.WELL_ID)
         self.aspirate(volume=self.MAX_VOLUME, source=source)
-        self.dispense(volume=drop_volume, source=source, destination=destination)
+        pendant_drop_camera.start_capture()
+        self.dispense(
+            volume=drop_volume,
+            source=source,
+            destination=destination,
+            depth_offset=depth_offset,
+            flow_rate=flow_rate,
+        )
         self.api.delay(seconds=delay)
+        pendant_drop_camera.stop_capture()
+        self.dispense(
+            volume=self.volume, source=source, destination=source
+        )  # return liquid to source
 
     def __str__(self):
         return f"""

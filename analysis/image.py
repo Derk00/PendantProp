@@ -274,11 +274,11 @@ class PendantDropAnalysis:
             )
         return Hin
     
-    def image2st(self, file_path_raw_image: str, file_path_save_analysis_image = None):
-        self.load_raw_image(file_path=file_path_raw_image)
+    def image2st(self, img):
+        self.raw_image = img    
         self.process_image()
-        self.analyse()
-        self.save_analysis_image(file_path=file_path_save_analysis_image)
+        st = self.analyse()
+        return st, self.analysis_image
 
     def show_raw_image(self):
         cv2.imshow(winname=self.file_path, mat=self.raw_image)

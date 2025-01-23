@@ -1,4 +1,5 @@
 import os
+import cv2
 from flask import (
     Flask,
     render_template,
@@ -19,6 +20,7 @@ from hardware.cameras import OpentronCamera, PendantDropCamera
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "default_secret_key")
 app.config["UPLOAD_FOLDER"] = "experiments"
+# app.config["PENDANT_DROP_CAMERA"] = PendantDropCamera()
 
 
 @app.route("/")
@@ -177,11 +179,19 @@ def opentron_video_feed():
     )
 
 
+@app.route("/turn_on_pendant_drop_camera", methods=["POST"])
+def turn_on_pendant_drop_camera():
+    pendant_drop_camera = PendantDropCamera()
+    pendant_drop_camera.initialize_measurement(well_id="4A1")
+    pendant_drop_camera.start_capture()
+    session["last_action"] = "Pendant drop camera turned on"
+    return redirect(url_for("index"))
+
+pendant_drop_camera = PendantDropCamera()
 @app.route("/pendant_drop_video_feed")
 def pendant_drop_video_feed():
-    pendant_drop_camera = (
-        PendantDropCamera()
-    )  # needs to be in the route function to avoid issues
+    pendant_drop_camera.initialize_measurement(well_id="4A1")
+    pendant_drop_camera.start_capture()
     return Response(
         pendant_drop_camera.generate_frames(),
         mimetype="multipart/x-mixed-replace; boundary=frame",

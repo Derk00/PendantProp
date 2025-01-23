@@ -318,8 +318,8 @@ class Opentrons_http_api:
         labware_id: str,
         volume: int,
         well: str,
+        flow_rate: float,
         depth=-5,
-        flow_rate=100,
         offset: dict = dict(x=0, y=0, z=0),
         intent="setup",
     ):

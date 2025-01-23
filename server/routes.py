@@ -6,21 +6,29 @@ from flask import (
     request,
     redirect,
     url_for,
-    flash,
+    send_from_directory,
     session,
     abort,
     Response,
     jsonify,
 )
-from utils.load_save_functions import save_csv_file, load_settings, save_settings, save_settings_meta_data
-from hardware.cameras import OpentronCamera, PendantDropCamera
 
+from utils.load_save_functions import (
+    save_csv_file,
+    load_settings,
+    save_settings,
+    save_settings_meta_data,
+)
+from hardware.cameras import OpentronCamera, PendantDropCamera
+from protocols.calibration import prototcol_calibrate
+from protocols.surfactant_characterization import prototcol_surfactant_characterization
+from protocols.formulation import prototcol_formulate
+from protocols.measure_wells import prototcol_measure_wells
 
 # initialize the Flask app
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "default_secret_key")
 app.config["UPLOAD_FOLDER"] = "experiments"
-# app.config["PENDANT_DROP_CAMERA"] = PendantDropCamera()
 
 
 @app.route("/")
@@ -94,6 +102,18 @@ def initialisation():
     return redirect(url_for("index"))
 
 
+@app.route("/input_calibration", methods=["POST"])
+def input_calibration():
+    return render_template("input_calibration.html")
+
+
+@app.route("/calibrate", methods=["POST"])
+def calibrate():
+    prototcol_calibrate()
+    session["last_action"] = "Calibration done"
+    return redirect(url_for("index"))
+
+
 @app.route("/input_formulate", methods=["POST"])
 def input_formulate():
     return render_template("input_formulate.html")
@@ -101,15 +121,14 @@ def input_formulate():
 
 @app.route("/formulate", methods=["POST"])
 def formulate():
-    csv_file = request.files.get("csv_file")
     settings = load_settings()
-    exp_name = settings.get("EXPERIMENT_NAME")
-    if not exp_name:
-        abort(400, "Experiment name not found in session")
-    sub_dir = "meta_data"
-    save_csv_file(exp_name, sub_dir, csv_file, app)
-
-    # opentrons_api.formulate()
+    save_csv_file(
+        exp_name=settings["EXPERIMENT_NAME"],
+        subdir_name="meta_data",
+        csv_file=request.files.get("csv_file"),
+        app=app,
+    )
+    prototcol_formulate()
     session["last_action"] = "Formulation done"
     return redirect(url_for("index"))
 
@@ -119,15 +138,17 @@ def input_measure_wells():
     return render_template("input_measure_wells.html")
 
 
-@app.route("/measure", methods=["POST"])
-def measure():
-    plate_location = request.form.get("plate_location")
-    start_well = request.form.get("start_well")
-    end_well = request.form.get("end_well")
-    print(
-        f"Measuring wells {start_well} to {end_well}, plate at location: {plate_location}..."
+@app.route("/measure_wells", methods=["POST"])
+def measure_wells():
+    settings = load_settings()
+    save_csv_file(
+        exp_name=settings["EXPERIMENT_NAME"],
+        subdir_name="meta_data",
+        csv_file=request.files.get("csv_file"),
+        app=app,
     )
-    session["last_action"] = "Wells measured"
+    prototcol_measure_wells()
+    session["last_action"] = "Measuring wells"
     return redirect(url_for("index"))
 
 
@@ -138,13 +159,14 @@ def input_surfactant_characterization():
 
 @app.route("/characterize", methods=["POST"])
 def characterize():
-    csv_file = request.files.get("csv_file")
     settings = load_settings()
-    exp_name = settings["EXPERIMENT_NAME"]
-    if not exp_name:
-        abort(400, "Experiment name not found in session")
-    sub_dir = "meta_data"
-    save_csv_file(exp_name, sub_dir, csv_file, app)
+    save_csv_file(
+        exp_name=settings["EXPERIMENT_NAME"],
+        subdir_name="meta_data",
+        csv_file=request.files.get("csv_file"),
+        app=app,
+    )
+    prototcol_surfactant_characterization()
     session["last_action"] = "Surfactant characterized"
     return redirect(url_for("index"))
 
@@ -154,48 +176,49 @@ def about():
     return render_template("about.html")
 
 
-@app.route("/input_calibration", methods=["POST"])
-def input_calibration():
-    return render_template("input_calibration.html")
+try:
+    opentron_camera = (
+        OpentronCamera()
+    )  # needs to be outside the route function to avoid issues
+
+    @app.route("/opentron_video_feed")
+    def opentron_video_feed():
+        return Response(
+            opentron_camera.generate_frames(),
+            mimetype="multipart/x-mixed-replace; boundary=frame",
+        )
+
+except:
+
+    @app.route("/opentron_video_feed")
+    def opentron_video_feed():
+        return send_from_directory(
+            directory="graphic", path="round_2.png", mimetype="image/png"
+        )
 
 
-@app.route("/calibrate", methods=["POST"])
-def calibrate():
-    # opentrons_api.calibration()
-    session["last_action"] = "Calibration done"
-    return redirect(url_for("index"))
 
-
-opentron_camera = (
-    OpentronCamera()
-)  # needs to be outside the route function to avoid issues
-
-
-@app.route("/opentron_video_feed")
-def opentron_video_feed():
-    return Response(
-        opentron_camera.generate_frames(),
-        mimetype="multipart/x-mixed-replace; boundary=frame",
-    )
-
-
-@app.route("/turn_on_pendant_drop_camera", methods=["POST"])
-def turn_on_pendant_drop_camera():
+try:
     pendant_drop_camera = PendantDropCamera()
-    pendant_drop_camera.initialize_measurement(well_id="4A1")
-    pendant_drop_camera.start_capture()
-    session["last_action"] = "Pendant drop camera turned on"
-    return redirect(url_for("index"))
 
-pendant_drop_camera = PendantDropCamera()
-@app.route("/pendant_drop_video_feed")
-def pendant_drop_video_feed():
-    pendant_drop_camera.initialize_measurement(well_id="4A1")
-    pendant_drop_camera.start_capture()
-    return Response(
-        pendant_drop_camera.generate_frames(),
-        mimetype="multipart/x-mixed-replace; boundary=frame",
-    )
+    @app.route("/pendant_drop_video_feed")
+    def pendant_drop_video_feed():
+        pendant_drop_camera.initialize_measurement(well_id="4A1")
+        pendant_drop_camera.start_capture()
+        return Response(
+            pendant_drop_camera.generate_frames(),
+            mimetype="multipart/x-mixed-replace; boundary=frame",
+        )
+
+except:
+
+    @app.route("/pendant_drop_video_feed")
+    def pendant_drop_video_feed():
+        return send_from_directory(
+            directory="graphic",
+            path="pendant_drop_sarstedtp10.png",
+            mimetype="image/png",
+        )
 
 
 @app.route("/status", methods=["POST"])

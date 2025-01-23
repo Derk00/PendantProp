@@ -348,6 +348,9 @@ class Pipette:
         self.dispense(
             volume=self.volume, source=source, destination=source
         )  # return liquid to source
+        st_eq = pendant_drop_camera.st_eq
+        st_t = pendant_drop_camera.st_t
+        return st_eq, st_t
 
     def __str__(self):
         return f"""

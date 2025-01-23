@@ -92,12 +92,14 @@ class PendantDropCamera:
         self.save_thread = None
         self.analyze_thread = None
         self.thread = None
-        self.ST = None
+        self.st_eq = None #surface tension equillibrium
+        self.st_t = None #surface tension over time (s-1)
         self.well_id = None
 
     def initialize_measurement(self, well_id: str):
         self.well_id = well_id
-        self.ST = [0]
+        self.st_eq = [0]
+        self.st_t = [0]
         self.logger.info(f"camera: updated well id to {self.well_id}")
 
     def start_capture(self):

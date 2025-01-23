@@ -1,0 +1,3 @@
+from protocols.measure_wells import prototcol_measure_wells
+
+prototcol_measure_wells()

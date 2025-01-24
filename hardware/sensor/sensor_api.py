@@ -24,7 +24,7 @@ class SensorApi:
         df.columns = ["date & time", "Temperature (C)", "Humidity (%)", "Pressure (Pa)"]
 
         # Retrieve the latest sensor data (second last row)
-        last_sensor_data = df.iloc[-2].to_json()
+        last_sensor_data = df.iloc[-2]
 
         return last_sensor_data
 

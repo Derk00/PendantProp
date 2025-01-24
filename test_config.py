@@ -11,14 +11,14 @@ containers = config.load_containers()
 right_pipette = pipettes["right"]
 left_pipette = pipettes["left"]
 
-#! excutable robot commands
-api.home()
-left_pipette.pick_up_tip()
-left_pipette.measure_pendant_drop(
-    source=containers["water"],
-    destination=containers["drop_stage"],
-    drop_volume=10,
-    delay=10,
-    dispense_rate=100,
-)
-left_pipette.drop_tip(return_tip=True)
+# #! excutable robot commands
+# api.home()
+# left_pipette.pick_up_tip()
+# left_pipette.measure_pendant_drop(
+#     source=containers["water"],
+#     destination=containers["drop_stage"],
+#     drop_volume=10,
+#     delay=10,
+#     dispense_rate=100,
+# )
+# left_pipette.drop_tip(return_tip=True)

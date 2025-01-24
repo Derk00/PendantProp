@@ -62,11 +62,8 @@ class PendantDropCamera:
         self.settings = load_settings()
         self.experiment_name = self.settings["EXPERIMENT_NAME"]
         self.save_dir = f"experiments/{self.experiment_name}/data"
-        self.logger = Logger(
-            name="pendant_drop_camera",
-            file_path=f"experiments/{self.experiment_name}/meta_data",
-        )
-        self.analysis_pipeline = PendantDropAnalysis()
+        analyzer = PendantDropAnalysis()
+        self.analyzer = analyzer
 
         try:
             # Camera settings
@@ -77,9 +74,9 @@ class PendantDropCamera:
             self.converter.OutputPixelFormat = pylon.PixelType_BGR8packed
             self.converter.OutputBitAlignment = pylon.OutputBitAlignment_MsbAligned
             self.running = False
-            self.logger.info("Camera: initialized")
+            print("Camera: initialized")
         except:
-            self.logger.error("Camera: Could not find pendant drop camera. Close camera software and check cables.")
+            print("Camera: Could not find pendant drop camera. Close camera software and check cables.")
 
         # this is to prevent racing conditions
         self.save_thread = threading.Thread(target=self._save_current_image)
@@ -92,18 +89,23 @@ class PendantDropCamera:
         self.save_thread = None
         self.analyze_thread = None
         self.thread = None
-        self.st_eq = None #surface tension equillibrium
-        self.st_t = None #surface tension over time (s-1)
         self.well_id = None
 
+    def init_logger(self):
+        self.logger = Logger(
+            name="pendant_drop_camera",
+            file_path=f"experiments/{self.experiment_name}/meta_data",
+        )
+
     def initialize_measurement(self, well_id: str):
+        self.init_logger()
         self.well_id = well_id
-        self.st_eq = [0]
-        self.st_t = [0]
+        self.st_t = []  # surface tension over time (s-1)
         self.logger.info(f"camera: updated well id to {self.well_id}")
 
     def start_capture(self):
         if not self.running:
+            self.start_time = datetime.now()
             self.running = True
             # Create new thread instances every time start_capture is called
             self.thread = threading.Thread(target=self._capture)
@@ -131,7 +133,6 @@ class PendantDropCamera:
             time.sleep(1)  # Ensure it runs every second
             if self.current_image is not None:
                 self.save_image(self.current_image)
-            # ? here we can also store st?
 
     def _analyze_current_image(self):
         while self.running:
@@ -139,18 +140,23 @@ class PendantDropCamera:
                 self.analyze_image(self.current_image)
 
     def save_image(self, img):
-        filepath = f"{self.save_dir}/{self.well_id}"
-        filename = os.path.join(
-            filepath, f"{self.ST[-1]}_{datetime.now().strftime('%Y%m%d%H%M%S')}.jpg"
-        )
+        directory = f"{self.save_dir}/{self.well_id}"
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"{directory}/{timestamp}.png"
         cv2.imwrite(filename, img)
 
     def analyze_image(self, img):
+
         try:
-            st, analysis_image = self.analysis_pipeline(img)
-            self.ST.append(st)
+            time_stamp = datetime.now()
+            relative_time = (time_stamp - self.start_time).total_seconds()
+            st, analysis_image = self.analyzer.image2st(img)
+            self.st_t.append([relative_time, st])
             self.image4feed = analysis_image
-        except:
+        except Exception as e:
+            # self.logger.error(f"Camera: error {e}")
             self.image4feed = img
 
     def stop_capture(self):
@@ -161,12 +167,13 @@ class PendantDropCamera:
             self.save_thread.join()
         if self.analyze_thread is not None:
             self.analyze_thread.join()
-        
+
         # Reset the thread attributes to None to ensure they are recreated in the next start_capture call
         self.thread = None
         self.save_thread = None
         self.analyze_thread = None
-    
+        self.image4feed = None
+
     def generate_frames(self):
         while True:
             with self.lock:
@@ -180,4 +187,4 @@ class PendantDropCamera:
 
 
 if __name__ == "__main__":
-    pendant_drop_camera = PendantDropCamera()
+    pass

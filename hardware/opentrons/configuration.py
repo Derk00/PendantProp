@@ -6,6 +6,8 @@ from utils.load_save_functions import load_settings
 from utils.logger import Logger
 from hardware.opentrons.http_communications import Opentrons_http_api
 
+#TODO no difference between source and destination?
+
 
 class Configuration:
 
@@ -115,6 +117,7 @@ class Configuration:
                 "tube rack 15 mL": FalconTube15,
                 "glass vial rack": GlassVial,
                 "tube rack 50 mL": FalconTube50,
+                "plate": PlateWell
             }
 
             for i, function in enumerate(layout["function"]):

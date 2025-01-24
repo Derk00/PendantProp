@@ -1,3 +1,3 @@
-from protocols.measure_wells import prototcol_measure_wells
+from protocols.calibration import prototcol_calibrate
 
-prototcol_measure_wells()
+prototcol_calibrate()

@@ -19,13 +19,15 @@ from utils.logger import Logger
 class PendantDropAnalysis:
     def __init__(self):
         self.settings = load_settings()
-        self.density = self.settings["DENSITY"]
-        self.scale = self.settings["SCALE"]
+        self.density = float(self.settings["DENSITY"])
+        self.scale = float(self.settings["SCALE"])
         self.gravity_constant = 9.80665
         self.file_path = None
         self.raw_image = None
         self.processed_image = None
         self.analysis_image = None
+
+    def init_logger(self):
         self.logger = Logger(
             name="analysis",
             file_path=f'experiments/{self.settings["EXPERIMENT_NAME"]}/meta_data',
@@ -81,8 +83,8 @@ class PendantDropAnalysis:
             image=self.analysis_image,
             contours=[longest_contour],
             contourIdx=-1,
-            color=(31, 119, 180),
-            thickness=2,
+            color=(252, 3, 103),
+            thickness=10,
         )
 
         # Find the bounding rectangle for the contour + De calculated
@@ -102,14 +104,14 @@ class PendantDropAnalysis:
             pt1=left_pt_de_line,
             pt2=right_pt_de_line,
             color=(255, 127, 14),
-            thickness=2,
+            thickness=10,
         )
         cv2.arrowedLine(
             img=self.analysis_image,
             pt1=right_pt_de_line,
             pt2=left_pt_de_line,
             color=(255, 127, 14),
-            thickness=2,
+            thickness=10,
         )
         cv2.putText(
             img=self.analysis_image,
@@ -128,7 +130,7 @@ class PendantDropAnalysis:
 
         # Create new blank image to redraw biggest contour and crop above the ds
         cropped_image = np.zeros_like(self.raw_image)
-        cv2.drawContours(cropped_image, [longest_contour], -1, (0, 255, 0), thickness=2)
+        cv2.drawContours(cropped_image, [longest_contour], -1, (0, 255, 0), thickness=10)
         cropped_image = cv2.cvtColor(cropped_image, cv2.COLOR_BGR2GRAY)
         cropped_image = cropped_image[
             int(top_left[1]) : int(bottom_left[1] - (de)),
@@ -172,7 +174,7 @@ class PendantDropAnalysis:
                 new_y_position,
             ),  # Use new Y-coordinate for right contour, ensuring line is horizontal
             (31, 119, 180),  # Color for distinction
-            thickness=2,
+            thickness=10,
         )
         cv2.arrowedLine(
             self.analysis_image,
@@ -182,7 +184,7 @@ class PendantDropAnalysis:
             ),
             (Lx_adjusted, new_y_position),  # Use new Y-coordinate for left contour
             (31, 119, 180),  # Color for distinction
-            thickness=2,
+            thickness=10,
         )
 
         # # Adjust the text position to be slightly above or below the line
@@ -204,14 +206,13 @@ class PendantDropAnalysis:
 
         S = ds / de
         Hin = self.calculate_Hin(S)
-
-        de_scaled = de * self.scale
+        de_scaled = de * self.scale # pixels -> mm
         surface_tension = self.density * self.gravity_constant * (de_scaled**2) * Hin
 
         # Draw the surface_tension on the visual_image
         cv2.putText(
             self.analysis_image,
-            f"surface_tension: {surface_tension:.2f}",
+            f"surface_tension: {surface_tension:.2f} mN/m",
             (10, self.analysis_image.shape[0] - 10),
             cv2.FONT_HERSHEY_SIMPLEX,
             2,
@@ -273,8 +274,9 @@ class PendantDropAnalysis:
                 - (0.20970)
             )
         return Hin
-    
+
     def image2st(self, img):
+        self.init_logger()
         self.raw_image = img    
         self.process_image()
         st = self.analyse()

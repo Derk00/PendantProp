@@ -325,6 +325,7 @@ class Pipette:
         drop_volume: float,
         delay: float,
         flow_rate: float,
+        pendant_drop_camera: PendantDropCamera,
         depth_offset: float = -25.4,
     ):
         # TODO implement dispense rate
@@ -332,9 +333,9 @@ class Pipette:
             self.protocol_logger.error(
                 f"Wrong pipette is given. Expected p20_single_gen2 but got {self.PIPETTE_NAME}"
             )
-        pendant_drop_camera = PendantDropCamera()
+        pendant_drop_camera = pendant_drop_camera
         pendant_drop_camera.initialize_measurement(well_id=source.WELL_ID)
-        self.aspirate(volume=self.MAX_VOLUME, source=source)
+        self.aspirate(volume=self.MAX_VOLUME, source=source, touch_tip=True)
         pendant_drop_camera.start_capture()
         self.dispense(
             volume=drop_volume,
@@ -348,9 +349,8 @@ class Pipette:
         self.dispense(
             volume=self.volume, source=source, destination=source
         )  # return liquid to source
-        st_eq = pendant_drop_camera.st_eq
         st_t = pendant_drop_camera.st_t
-        return st_eq, st_t
+        return st_t
 
     def __str__(self):
         return f"""

@@ -1,14 +1,12 @@
 import os
-import cv2
+import threading
 from flask import (
     Flask,
     render_template,
     request,
     redirect,
     url_for,
-    send_from_directory,
     session,
-    abort,
     Response,
     jsonify,
 )
@@ -29,6 +27,9 @@ from protocols.measure_wells import prototcol_measure_wells
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "default_secret_key")
 app.config["UPLOAD_FOLDER"] = "experiments"
+
+# initialize pendant drop camera
+pendant_drop_camera = PendantDropCamera()
 
 
 @app.route("/")
@@ -55,9 +56,7 @@ def settings():
     settings["EQUILIBRATION_TIME"] = request.form.get("EQUILIBRATION_TIME")
     settings["FLOW_RATE"] = request.form.get("FLOW_RATE")
     settings["DENSITY"] = request.form.get("DENSITY")
-    settings["NEEDLE_DIAMETER"] = request.form.get("NEEDLE_DIAMETER")
     settings["SCALE"] = request.form.get("SCALE")
-    settings["DROP_HEIGHT"] = request.form.get("DROP_HEIGHT")
     ## characterization settings
     settings["DILUTION_FACTOR"] = request.form.get("DILUTION_FACTOR")
     settings["EXPLORE_POINTS"] = request.form.get("EXPLORE_POINTS")
@@ -109,7 +108,9 @@ def input_calibration():
 
 @app.route("/calibrate", methods=["POST"])
 def calibrate():
-    prototcol_calibrate()
+    threading.Thread(
+        target=prototcol_calibrate, args=(pendant_drop_camera,)
+    ).start()
     session["last_action"] = "Calibration done"
     return redirect(url_for("index"))
 
@@ -147,7 +148,9 @@ def measure_wells():
         csv_file=request.files.get("csv_file"),
         app=app,
     )
-    prototcol_measure_wells()
+    threading.Thread(
+        target=prototcol_measure_wells, args=(pendant_drop_camera,)
+    ).start()
     session["last_action"] = "Measuring wells"
     return redirect(url_for("index"))
 
@@ -176,49 +179,23 @@ def about():
     return render_template("about.html")
 
 
-try:
-    opentron_camera = (
-        OpentronCamera()
-    )  # needs to be outside the route function to avoid issues
-
-    @app.route("/opentron_video_feed")
-    def opentron_video_feed():
-        return Response(
-            opentron_camera.generate_frames(),
-            mimetype="multipart/x-mixed-replace; boundary=frame",
-        )
-
-except:
-
-    @app.route("/opentron_video_feed")
-    def opentron_video_feed():
-        return send_from_directory(
-            directory="graphic", path="round_2.png", mimetype="image/png"
-        )
+opentron_camera = OpentronCamera()
 
 
+@app.route("/opentron_video_feed")
+def opentron_video_feed():
+    return Response(
+        opentron_camera.generate_frames(),
+        mimetype="multipart/x-mixed-replace; boundary=frame",
+    )
 
-try:
-    pendant_drop_camera = PendantDropCamera()
 
-    @app.route("/pendant_drop_video_feed")
-    def pendant_drop_video_feed():
-        pendant_drop_camera.initialize_measurement(well_id="4A1")
-        pendant_drop_camera.start_capture()
-        return Response(
-            pendant_drop_camera.generate_frames(),
-            mimetype="multipart/x-mixed-replace; boundary=frame",
-        )
-
-except:
-
-    @app.route("/pendant_drop_video_feed")
-    def pendant_drop_video_feed():
-        return send_from_directory(
-            directory="graphic",
-            path="pendant_drop_sarstedtp10.png",
-            mimetype="image/png",
-        )
+@app.route("/pendant_drop_video_feed")
+def pendant_drop_video_feed():
+    return Response(
+        pendant_drop_camera.generate_frames(),
+        mimetype="multipart/x-mixed-replace; boundary=frame",
+    )
 
 
 @app.route("/status", methods=["POST"])

@@ -6,7 +6,7 @@ from utils.load_save_functions import load_settings
 from utils.logger import Logger
 from hardware.opentrons.http_communications import Opentrons_http_api
 
-#TODO no difference between source and destination?
+# TODO no difference between source and destination?
 
 
 class Configuration:
@@ -129,8 +129,9 @@ class Configuration:
                     well = layout.loc[i, "well"]
                     initial_volume = layout.loc[i, "initial volume (mL)"]
                     container_class = labware_mapping.get(labware_name)
-
-                    containers[name_solution] = container_class(
+                    location = labware_info["location"]
+                    well_id = f"{location}{well}"
+                    containers[well_id] = container_class(
                         labware_info=labware_info,
                         well=well,
                         initial_volume_mL=initial_volume,
@@ -151,7 +152,7 @@ class Configuration:
                     labware_info = self.LABWARE[labware_name]
                     location = labware_info["location"]
                     containers[labware_name] = DropStage(labware_info=labware_info)
-                
+
                 elif function == "light_holder":
                     labware_name = layout.loc[i, "labware name"]
                     labware_info = self.LABWARE[labware_name]

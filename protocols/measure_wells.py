@@ -32,7 +32,7 @@ def prototcol_measure_wells(pendant_drop_camera: PendantDropCamera):
     for well_id in well_ids:
         sensor_data = sensor_api.capture_sensor_data()
         st_t = left_pipette.measure_pendant_drop(
-            source=containers["water"], #TODO fix to well id
+            source=containers[well_id], 
             destination=containers["drop_stage"],
             drop_volume=float(settings["DROP_VOLUME"]),
             delay=float(settings["EQUILIBRATION_TIME"]),

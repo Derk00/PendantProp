@@ -336,7 +336,7 @@ class Pipette:
         pendant_drop_camera = pendant_drop_camera
         pendant_drop_camera.initialize_measurement(well_id=source.WELL_ID)
         self.aspirate(volume=self.MAX_VOLUME, source=source, touch_tip=True)
-        pendant_drop_camera.start_capture()
+        pendant_drop_camera.start_stream()
         self.dispense(
             volume=drop_volume,
             source=source,
@@ -344,8 +344,10 @@ class Pipette:
             depth_offset=depth_offset,
             flow_rate=flow_rate,
         )
+        pendant_drop_camera.start_capture()
         self.api.delay(seconds=delay)
         pendant_drop_camera.stop_capture()
+        pendant_drop_camera.stop_stream()
         self.dispense(
             volume=self.volume, source=source, destination=source
         )  # return liquid to source

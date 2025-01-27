@@ -11,6 +11,8 @@ containers = config.load_containers()
 right_pipette = pipettes["right"]
 left_pipette = pipettes["left"]
 
+print(containers["3A1"])
+print(containers["6A1"])
 # #! excutable robot commands
 # api.home()
 # left_pipette.pick_up_tip()

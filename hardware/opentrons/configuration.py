@@ -2,7 +2,7 @@ import pandas as pd
 import os
 from hardware.opentrons.containers import *
 from hardware.opentrons.pipette import Pipette
-from utils.load_save_functions import load_settings
+from utils.load_save_functions import load_settings, save_instances_to_csv
 from utils.logger import Logger
 from hardware.opentrons.http_communications import Opentrons_http_api
 
@@ -13,6 +13,7 @@ class Configuration:
 
     def __init__(self, http_api: Opentrons_http_api):
         settings = load_settings()
+        self.settings = settings
         self.api = http_api
         self.LABWARE_DEFINITIONS_FOLDER = self.api.LABWARE_DEFINITIONS_FOLDER
         self.ROBOT_TYPE = settings["ROBOT_TYPE"]
@@ -121,7 +122,7 @@ class Configuration:
             }
 
             for i, function in enumerate(layout["function"]):
-                if function == "source":  # check if function is source
+                if function == "source": 
                     name_solution = layout.loc[i, "solution"]
                     concentration = layout.loc[i, "concentration (mM)"]
                     labware_name = layout.loc[i, "labware name"]
@@ -138,6 +139,7 @@ class Configuration:
                         solution_name=name_solution,
                         concentration=concentration,
                     )
+
                 elif function == "destination":  # check if function is destination
                     labware_name = layout.loc[i, "labware name"]
                     labware_info = self.LABWARE[labware_name]
@@ -147,6 +149,7 @@ class Configuration:
                         containers[well_id] = PlateWell(
                             labware_info=labware_info, well=well
                         )
+
                 elif function == "drop_stage":
                     labware_name = layout.loc[i, "labware name"]
                     labware_info = self.LABWARE[labware_name]
@@ -164,3 +167,15 @@ class Configuration:
         except Exception as e:
             self.logger.error(f"Error loading containers: {e}")
             return None
+
+    def save_containers(self, containers: list):
+        containers_only = []
+        for key in containers.keys():
+            if key == "drop_stage" or key == "light_holder":
+                pass
+            else:
+                containers_only.append(containers[key])
+        filename = f'experiments/{self.settings["EXPERIMENT_NAME"]}/meta_data/initial_well_config.csv'
+        save_instances_to_csv(instances=containers_only, filename=filename)
+
+        

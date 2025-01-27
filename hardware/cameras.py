@@ -74,6 +74,7 @@ class PendantDropCamera:
             self.converter.OutputPixelFormat = pylon.PixelType_BGR8packed
             self.converter.OutputBitAlignment = pylon.OutputBitAlignment_MsbAligned
             self.running = False
+            self.streaming = False
             print("Camera: initialized")
         except:
             print("Camera: Could not find pendant drop camera. Close camera software and check cables.")
@@ -85,7 +86,7 @@ class PendantDropCamera:
 
         # initialize some empty attributes
         self.current_image = None
-        self.image4feed = None
+        self.analysis_image = None
         self.save_thread = None
         self.analyze_thread = None
         self.thread = None
@@ -103,22 +104,26 @@ class PendantDropCamera:
         self.st_t = []  # surface tension over time (s-1)
         self.logger.info(f"camera: updated well id to {self.well_id}")
 
+    def start_stream(self):
+        if not self.streaming:
+            self.streaming = True
+            self.thread = threading.Thread(target=self._capture)
+            self.thread.start()
+
     def start_capture(self):
         if not self.running:
             self.start_time = datetime.now()
             self.running = True
             # Create new thread instances every time start_capture is called
-            self.thread = threading.Thread(target=self._capture)
             self.save_thread = threading.Thread(target=self._save_current_image)
             self.analyze_thread = threading.Thread(target=self._analyze_current_image)
             # Start the new threads
-            self.thread.start()
             self.save_thread.start()
             self.analyze_thread.start()        
 
     def _capture(self):
         self.camera.StartGrabbing(pylon.GrabStrategy_LatestImageOnly)
-        while self.running and self.camera.IsGrabbing():
+        while self.streaming and self.camera.IsGrabbing():
             grabResult = self.camera.RetrieveResult(
                 5000, pylon.TimeoutHandling_ThrowException
             )
@@ -154,30 +159,40 @@ class PendantDropCamera:
             relative_time = (time_stamp - self.start_time).total_seconds()
             st, analysis_image = self.analyzer.image2st(img)
             self.st_t.append([relative_time, st])
-            self.image4feed = analysis_image
+            self.analysis_image = analysis_image
         except Exception as e:
             # self.logger.error(f"Camera: error {e}")
-            self.image4feed = img
+            self.analysis_image = None
 
     def stop_capture(self):
         self.running = False
-        if self.thread is not None:
-            self.thread.join()
         if self.save_thread is not None:
             self.save_thread.join()
         if self.analyze_thread is not None:
             self.analyze_thread.join()
 
         # Reset the thread attributes to None to ensure they are recreated in the next start_capture call
-        self.thread = None
         self.save_thread = None
         self.analyze_thread = None
-        self.image4feed = None
+        self.analysis_image = None
+
+    def stop_stream(self):
+        self.streaming = False
+        if self.thread is not None:
+            self.thread.join()
+        self.thread = None
+        self.current_image = None
 
     def generate_frames(self):
         while True:
             with self.lock:
-                image4feed = self.image4feed
+                if self.thread == None:
+                    image4feed = None
+                elif self.save_thread != None:
+                    image4feed = self.analysis_image
+                else:
+                    image4feed = self.current_image
+                    
             if image4feed is not None:
                 ret, buffer = cv2.imencode(".jpg", image4feed)
                 frame = buffer.tobytes()

@@ -1,6 +1,6 @@
 import os
 import json
-
+import csv
 
 def save_csv_file(exp_name: str, subdir_name: str, csv_file, app):
     """
@@ -47,6 +47,22 @@ def save_settings_meta_data(settings: dict):
     file_path = f"experiments/{settings['EXPERIMENT_NAME']}/meta_data/settings.json"
     with open(file_path, "w") as file:
         json.dump(settings, file, indent=4)
+
+
+def save_instances_to_csv(instances, filename):
+    # Get the attribute names from the first instance
+    fieldnames = [attr for attr in vars(instances[0])]
+
+    with open(filename, mode="w", newline="") as file:
+        writer = csv.DictWriter(file, fieldnames=fieldnames)
+
+        # Write the header
+        writer.writeheader()
+
+        # Write the data rows
+        for instance in instances:
+            writer.writerow(vars(instance))
+
 
 if __name__ == "__main__":
     settings = load_settings()

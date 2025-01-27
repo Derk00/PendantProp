@@ -1,7 +1,7 @@
 {
     "ROBOT_IP": "169.254.220.146",
     "ROBOT_TYPE": "OT2",
-    "EXPERIMENT_NAME": "demonstration",
+    "EXPERIMENT_NAME": "2701_test2",
     "DROP_VOLUME": "12",
     "EQUILIBRATION_TIME": "30",
     "FLOW_RATE": "1",

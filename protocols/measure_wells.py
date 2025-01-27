@@ -28,8 +28,9 @@ def prototcol_measure_wells(pendant_drop_camera: PendantDropCamera):
     left_pipette = pipettes["left"]
 
     api.home()
-    left_pipette.pick_up_tip()
+
     for well_id in well_ids:
+        left_pipette.pick_up_tip()
         sensor_data = sensor_api.capture_sensor_data()
         st_t = left_pipette.measure_pendant_drop(
             source=containers[well_id], 
@@ -39,15 +40,18 @@ def prototcol_measure_wells(pendant_drop_camera: PendantDropCamera):
             flow_rate=float(settings["FLOW_RATE"]),
             pendant_drop_camera=pendant_drop_camera
         )
-        df = pd.DataFrame(st_t, columns=["time (s)", "surface tension (mN/m)"])
-        df.to_csv(
-            f"experiments/{settings['EXPERIMENT_NAME']}/data/{well_id}/dynamic_surface_tension.csv"
-        )
-        results.loc[results["well id"] == well_id, "surface tension eq. (mN/m)"] = st_t[-1][1] #TODO take average
-        results.loc[results["well id"] == well_id, "temperature (C)"] = (
-            float(sensor_data["Temperature (C)"])
-        )
+        left_pipette.drop_tip()
+        if st_t:
+            df = pd.DataFrame(st_t, columns=["time (s)", "surface tension (mN/m)"])
+            df.to_csv(
+                f"experiments/{settings['EXPERIMENT_NAME']}/data/{well_id}/dynamic_surface_tension.csv"
+            )
+            results.loc[results["well id"] == well_id, "surface tension eq. (mN/m)"] = st_t[-1][1] #TODO take average
+            results.loc[results["well id"] == well_id, "temperature (C)"] = (
+                float(sensor_data["Temperature (C)"])
+            )
+        else:
+            print("was not able to measure pendant drop")
 
-    left_pipette.drop_tip(return_tip=True)
     file_name_results = f"experiments/{settings['EXPERIMENT_NAME']}/results.csv"
     results.to_csv(file_name_results)

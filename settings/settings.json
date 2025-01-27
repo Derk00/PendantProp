@@ -1,10 +1,10 @@
 {
     "ROBOT_IP": "169.254.220.146",
     "ROBOT_TYPE": "OT2",
-    "EXPERIMENT_NAME": "2701_test2",
+    "EXPERIMENT_NAME": "justin_test_nugoed",
     "DROP_VOLUME": "12",
     "EQUILIBRATION_TIME": "30",
-    "FLOW_RATE": "1",
+    "FLOW_RATE": "2",
     "DENSITY": "0.9977",
     "SCALE": "0.00245",
     "DROP_HEIGHT": 19,
@@ -14,6 +14,6 @@
     "EXPLOIT_POINTS": "4",
     "WELL_VOLUME": "200",
     "DYNAMIC_EQUILIBRATION_TIME": "True",
-    "CONFIG_FILENAME": "layout_test.csv",
+    "CONFIG_FILENAME": "layout_test_justin.csv",
     "UPLOAD_FOLDER": "/var/lib/jupyter/notebooks"
 }

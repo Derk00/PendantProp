@@ -210,14 +210,21 @@ class GlassVial(Container):
 
 
 class PlateWell(Container):
+
     def __init__(
         self,
         labware_info: dict,
         well: str,
+        initial_volume_mL: float,
+        solution_name: str,
+        concentration: any,
     ):
         super().__init__(
             labware_info,
             well,
+            initial_volume_mL,
+            solution_name,
+            concentration,
             inner_diameter_mm=6.96,
         )
         self.CONTAINER_TYPE = "Plate Well"

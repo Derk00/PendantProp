@@ -361,7 +361,7 @@ class Pipette:
         Mount: {self.MOUNT}
         Pipette name: {self.PIPETTE_NAME}
         Pipette ID: {self.PIPETTE_ID}
-        Tips ID: {self.TIPS_ID}
+        Tips ID: {self.TIPS_ID} 
         Has tip: {self.has_tip}
         Current volume: {self.volume} uL
         Current solution: {self.current_solution}

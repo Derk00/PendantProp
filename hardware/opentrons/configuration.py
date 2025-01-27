@@ -120,12 +120,23 @@ class Configuration:
                 "tube rack 50 mL": FalconTube50,
                 "plate": PlateWell
             }
-
             for i, function in enumerate(layout["function"]):
-                if function == "source": 
+
+                if function == "drop_stage":
+                    labware_name = layout.loc[i, "labware name"]
+                    labware_info = self.LABWARE[labware_name]
+                    location = labware_info["location"]
+                    containers[labware_name] = DropStage(labware_info=labware_info)
+                elif function == "light_holder":
+                    labware_name = layout.loc[i, "labware name"]
+                    labware_info = self.LABWARE[labware_name]
+                    location = labware_info["location"]
+                    containers[labware_name] = LightHolder(labware_info=labware_info)
+
+                if function == "container":
+                    labware_name = layout.loc[i, "labware name"]
                     name_solution = layout.loc[i, "solution"]
                     concentration = layout.loc[i, "concentration (mM)"]
-                    labware_name = layout.loc[i, "labware name"]
                     labware_info = self.LABWARE[labware_name]
                     well = layout.loc[i, "well"]
                     initial_volume = layout.loc[i, "initial volume (mL)"]
@@ -140,27 +151,15 @@ class Configuration:
                         concentration=concentration,
                     )
 
-                elif function == "destination":  # check if function is destination
-                    labware_name = layout.loc[i, "labware name"]
-                    labware_info = self.LABWARE[labware_name]
-                    location = labware_info["location"]
-                    for well in labware_info["ordering"]:
-                        well_id = f"{location}{well}"
-                        containers[well_id] = PlateWell(
-                            labware_info=labware_info, well=well
-                        )
-
-                elif function == "drop_stage":
-                    labware_name = layout.loc[i, "labware name"]
-                    labware_info = self.LABWARE[labware_name]
-                    location = labware_info["location"]
-                    containers[labware_name] = DropStage(labware_info=labware_info)
-
-                elif function == "light_holder":
-                    labware_name = layout.loc[i, "labware name"]
-                    labware_info = self.LABWARE[labware_name]
-                    location = labware_info["location"]
-                    containers[labware_name] = LightHolder(labware_info=labware_info)
+                # elif function == "destination":  # check if function is destination
+                #     labware_name = layout.loc[i, "labware name"]
+                #     labware_info = self.LABWARE[labware_name]
+                #     location = labware_info["location"]
+                #     for well in labware_info["ordering"]:
+                #         well_id = f"{location}{well}"
+                #         containers[well_id] = PlateWell(
+                #             labware_info=labware_info, well=well
+                #         )
 
             self.logger.info("Containers loaded successfully")
             return containers
@@ -177,5 +176,3 @@ class Configuration:
                 containers_only.append(containers[key])
         filename = f'experiments/{self.settings["EXPERIMENT_NAME"]}/meta_data/initial_well_config.csv'
         save_instances_to_csv(instances=containers_only, filename=filename)
-
-        

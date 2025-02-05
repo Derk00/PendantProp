@@ -197,6 +197,7 @@ def pendant_drop_video_feed():
         mimetype="multipart/x-mixed-replace; boundary=frame",
     )
 
+
 @app.route("/toggle_pendant_drop_camera", methods = ["POST"])
 def toggle_pendant_drop_camera():
     if pendant_drop_camera.streaming:
@@ -213,8 +214,13 @@ def toggle_pendant_drop_camera():
 def status():
     data = request.get_json()
     status = data.get("status")
-    print(f"Status: {status}")
+    print(f"Status: {status}")  
     return jsonify({"status": status})
 
-
-# TODO feed plots
+@app.route("/pendant_drop_plot_feed")
+def pendant_drop_plot_feed():
+    pendant_drop_camera.start_plot_frame_thread()
+    return Response(
+        pendant_drop_camera.generate_plot_frame(),
+        mimetype="multipart/x-mixed-replace; boundary=frame",
+    )

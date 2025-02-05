@@ -5,6 +5,11 @@ from threading import Thread, Event
 import time
 import os
 from datetime import datetime
+import matplotlib
+matplotlib.use("Agg")  # Use the Agg backend for non-GUI rendering
+import matplotlib.pyplot as plt
+import numpy as np
+from io import BytesIO
 
 from utils.load_save_functions import load_settings
 from utils.logger import Logger
@@ -59,11 +64,6 @@ class PendantDropCamera:
 
     def __init__(self):
         # Settings + Logger
-        self.settings = load_settings()
-        self.experiment_name = self.settings["EXPERIMENT_NAME"]
-        self.save_dir = f"experiments/{self.experiment_name}/data"
-        analyzer = PendantDropAnalysis()
-        self.analyzer = analyzer
 
         try:
             # Camera settings
@@ -85,6 +85,7 @@ class PendantDropCamera:
         self.lock = (threading.Lock())
 
         # initialize some empty attributes
+        self.st_t = None
         self.current_image = None
         self.analysis_image = None
         self.save_thread = None
@@ -99,6 +100,11 @@ class PendantDropCamera:
         )
 
     def initialize_measurement(self, well_id: str):
+        self.settings = load_settings()
+        self.experiment_name = self.settings["EXPERIMENT_NAME"]
+        self.save_dir = f"experiments/{self.experiment_name}/data"
+        analyzer = PendantDropAnalysis()
+        self.analyzer = analyzer
         self.init_logger()
         self.well_id = well_id
         self.st_t = []  # surface tension over time (s-1)
@@ -175,6 +181,7 @@ class PendantDropCamera:
         self.save_thread = None
         self.analyze_thread = None
         self.analysis_image = None
+        self.current_image = None
 
     def stop_stream(self):
         self.streaming = False
@@ -192,13 +199,59 @@ class PendantDropCamera:
                     image4feed = self.analysis_image
                 else:
                     image4feed = self.current_image
-                    
+
             if image4feed is not None:
                 ret, buffer = cv2.imencode(".jpg", image4feed)
                 frame = buffer.tobytes()
                 yield (b"--frame\r\n" b"Content-Type: image/jpeg\r\n\r\n" + frame + b"\r\n")
             else:
                 pass
+
+    def generate_plot_frame(self):
+        # self.st_t = [[0, 72], [1, 51]]
+        while True:
+            if self.st_t is not None and len(self.st_t) > 0:
+                # Create a plot
+                plt.figure()
+                t = [item[0] for item in self.st_t]
+                st = [item[1] for item in self.st_t]
+                plt.scatter(x=t, y=st, s=10)
+                plt.title("Surface Tension over Time")
+                plt.xlabel("Time")
+                plt.ylabel("Surface Tension")
+
+                # Save the plot to a BytesIO object
+                buf = BytesIO()
+                plt.savefig(buf, format="jpg")
+                plt.close()
+                buf.seek(0)
+
+                # Convert the BytesIO object to a NumPy array
+                image = np.asarray(bytearray(buf.read()), dtype=np.uint8)
+                image = cv2.imdecode(image, cv2.IMREAD_COLOR)
+
+                # Encode the image as a JPEG
+                ret, buffer = cv2.imencode(".jpg", image)
+                frame = buffer.tobytes()
+                yield (b"--frame\r\n" b"Content-Type: image/jpeg\r\n\r\n" + frame + b"\r\n")
+            else:
+                pass
+
+    def start_plot_frame_thread(self):
+        self.plot_thread = threading.Thread(target=self.generate_plot_frame)
+        self.plot_thread.start()
+
+    def print_active_threads(self):
+        print(f"stream thread: {self.thread}")
+        print(f"analyze thread: {self.analyze_thread}")
+
+        # Get a list of all active threads
+        active_threads = threading.enumerate()
+
+        # Print the name of each active thread
+        print("Active threads:")
+        for thread in active_threads:
+            print(f"- {thread.name}")
 
 
 if __name__ == "__main__":

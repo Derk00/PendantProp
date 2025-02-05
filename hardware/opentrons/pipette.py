@@ -348,6 +348,9 @@ class Pipette:
         self.api.delay(seconds=delay)
         pendant_drop_camera.stop_capture()
         pendant_drop_camera.stop_stream()
+        pendant_drop_camera.start_stream()
+        pendant_drop_camera.stop_stream()
+        pendant_drop_camera.print_active_threads()
         self.dispense(
             volume=self.volume, source=source, destination=source
         )  # return liquid to source

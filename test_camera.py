@@ -4,7 +4,7 @@ import time
 import numpy as np
 
 camera = PendantDropCamera()
-camera.initialize_measurement("6A1")
+camera.initialize_measurement("3A1")
 camera.start_stream()
 camera.start_capture()
 time.sleep(1)

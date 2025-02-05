@@ -326,7 +326,7 @@ class Pipette:
         delay: float,
         flow_rate: float,
         pendant_drop_camera: PendantDropCamera,
-        depth_offset: float = -25.4,
+        depth_offset: float = -23.4,
     ):
         # TODO implement dispense rate
         if self.PIPETTE_NAME != "p20_single_gen2":

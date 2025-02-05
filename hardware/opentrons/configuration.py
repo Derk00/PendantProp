@@ -113,35 +113,30 @@ class Configuration:
         try:
             containers = {}
             layout = self.LAYOUT
-            # Define a mapping from labware name to container class
+            # Define a mapping from labware name to container class #TODO generalize to multiple labwares
             labware_mapping = {
                 "tube rack 15 mL": FalconTube15,
                 "glass vial rack": GlassVial,
                 "tube rack 50 mL": FalconTube50,
-                "plate": PlateWell
+                "plate 1": PlateWell
             }
             for i, function in enumerate(layout["function"]):
+                labware_name = layout.loc[i, "labware name"]
+                labware_info = self.LABWARE[labware_name]
+                location = labware_info["location"]
+                name_solution = layout.loc[i, "solution"]
+                concentration = layout.loc[i, "concentration (mM)"]
+                well = layout.loc[i, "well"]
+                initial_volume = layout.loc[i, "initial volume (mL)"]
 
                 if function == "drop_stage":
-                    labware_name = layout.loc[i, "labware name"]
-                    labware_info = self.LABWARE[labware_name]
-                    location = labware_info["location"]
                     containers[labware_name] = DropStage(labware_info=labware_info)
+                
                 elif function == "light_holder":
-                    labware_name = layout.loc[i, "labware name"]
-                    labware_info = self.LABWARE[labware_name]
-                    location = labware_info["location"]
                     containers[labware_name] = LightHolder(labware_info=labware_info)
 
-                if function == "container":
-                    labware_name = layout.loc[i, "labware name"]
-                    name_solution = layout.loc[i, "solution"]
-                    concentration = layout.loc[i, "concentration (mM)"]
-                    labware_info = self.LABWARE[labware_name]
-                    well = layout.loc[i, "well"]
-                    initial_volume = layout.loc[i, "initial volume (mL)"]
+                elif function == "container":
                     container_class = labware_mapping.get(labware_name)
-                    location = labware_info["location"]
                     well_id = f"{location}{well}"
                     containers[well_id] = container_class(
                         labware_info=labware_info,
@@ -151,18 +146,9 @@ class Configuration:
                         concentration=concentration,
                     )
 
-                # elif function == "destination":  # check if function is destination
-                #     labware_name = layout.loc[i, "labware name"]
-                #     labware_info = self.LABWARE[labware_name]
-                #     location = labware_info["location"]
-                #     for well in labware_info["ordering"]:
-                #         well_id = f"{location}{well}"
-                #         containers[well_id] = PlateWell(
-                #             labware_info=labware_info, well=well
-                #         )
-
             self.logger.info("Containers loaded successfully")
             return containers
+
         except Exception as e:
             self.logger.error(f"Error loading containers: {e}")
             return None

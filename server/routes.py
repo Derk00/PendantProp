@@ -197,6 +197,17 @@ def pendant_drop_video_feed():
         mimetype="multipart/x-mixed-replace; boundary=frame",
     )
 
+@app.route("/toggle_pendant_drop_camera", methods = ["POST"])
+def toggle_pendant_drop_camera():
+    if pendant_drop_camera.streaming:
+        pendant_drop_camera.stop_stream()
+        session["last_action"] = "toggle off pendant drop camera"
+    else:
+        pendant_drop_camera.start_stream()
+        session["last_action"] = "toggle on pendant drop camera"
+
+    return redirect(url_for('index'))
+
 
 @app.route("/status", methods=["POST"])
 def status():

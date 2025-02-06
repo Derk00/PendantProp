@@ -333,9 +333,9 @@ class Pipette:
             self.protocol_logger.error(
                 f"Wrong pipette is given. Expected p20_single_gen2 but got {self.PIPETTE_NAME}"
             )
-        pendant_drop_camera = pendant_drop_camera
-        pendant_drop_camera.initialize_measurement(well_id=source.WELL_ID)
+
         self.aspirate(volume=self.MAX_VOLUME, source=source, touch_tip=True)
+        pendant_drop_camera.initialize_measurement(well_id=source.WELL_ID)
         pendant_drop_camera.start_stream()
         self.dispense(
             volume=drop_volume,
@@ -346,16 +346,15 @@ class Pipette:
         )
         pendant_drop_camera.start_capture()
         self.api.delay(seconds=delay)
+        # pendant_drop_camera.stop_measurement()
         pendant_drop_camera.stop_capture()
         pendant_drop_camera.stop_stream()
-        pendant_drop_camera.start_stream()
-        pendant_drop_camera.stop_stream()
-        pendant_drop_camera.print_active_threads()
+
         self.dispense(
             volume=self.volume, source=source, destination=source
         )  # return liquid to source
-        st_t = pendant_drop_camera.st_t
-        return st_t
+        
+        return pendant_drop_camera.st_t
 
     def __str__(self):
         return f"""

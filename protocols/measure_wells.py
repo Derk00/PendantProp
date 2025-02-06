@@ -40,7 +40,7 @@ def prototcol_measure_wells(pendant_drop_camera: PendantDropCamera):
             flow_rate=float(settings["FLOW_RATE"]),
             pendant_drop_camera=pendant_drop_camera
         )
-        left_pipette.drop_tip()
+        left_pipette.drop_tip(return_tip=True)
         if st_t:
             df = pd.DataFrame(st_t, columns=["time (s)", "surface tension (mN/m)"])
             df.to_csv(

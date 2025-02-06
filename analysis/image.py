@@ -224,8 +224,9 @@ class PendantDropAnalysis:
 
     def calculate_Hin(self, S):
         if not (0.3 < S < 1):
-            self.logger.error("analysis: shape factor S is out of bounds")
-
+            # self.logger.error("analysis: shape factor S is out of bounds")
+            pass
+        
         # find value for 1/H for different values of S
         if (S >= 0.3) and (S <= 0.4):
             Hin = (

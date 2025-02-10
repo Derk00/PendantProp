@@ -4,6 +4,7 @@ from hardware.opentrons.containers import *
 from hardware.opentrons.http_communications import Opentrons_http_api
 from hardware.cameras import PendantDropCamera
 
+
 class Pipette:
     def __init__(
         self,
@@ -12,6 +13,7 @@ class Pipette:
         pipette_name: str,
         pipette_id: str,
         tips_info: dict,
+        containers: dict,
     ):
         settings = load_settings()
         self.api = http_api
@@ -20,6 +22,7 @@ class Pipette:
         self.PIPETTE_ID = pipette_id
         self.TIPS_INFO = tips_info
         self.TIPS_ID = tips_info["labware_id"]
+        self.CONTAINERS = containers
         self.has_tip = False
         self.volume = 0
         self.current_solution = "empty"
@@ -321,40 +324,83 @@ class Pipette:
     def measure_pendant_drop(
         self,
         source: Container,
-        destination: Container,
         drop_volume: float,
         delay: float,
         flow_rate: float,
         pendant_drop_camera: PendantDropCamera,
         depth_offset: float = -23.4,
     ):
-        # TODO implement dispense rate
         if self.PIPETTE_NAME != "p20_single_gen2":
             self.protocol_logger.error(
                 f"Wrong pipette is given. Expected p20_single_gen2 but got {self.PIPETTE_NAME}"
             )
+            return
 
+        if self.has_tip == False:
+            self.pick_up_tip()
+        
         self.aspirate(volume=self.MAX_VOLUME, source=source, touch_tip=True)
+        self.clean_tip()
         pendant_drop_camera.initialize_measurement(well_id=source.WELL_ID)
         pendant_drop_camera.start_stream()
         self.dispense(
             volume=drop_volume,
             source=source,
-            destination=destination,
+            destination=self.CONTAINERS["drop_stage"],
             depth_offset=depth_offset,
             flow_rate=flow_rate,
         )
         pendant_drop_camera.start_capture()
         self.api.delay(seconds=delay)
-        # pendant_drop_camera.stop_measurement()
         pendant_drop_camera.stop_capture()
         pendant_drop_camera.stop_stream()
+        self.aspirate(
+            volume=drop_volume,
+            source=self.CONTAINERS["drop_stage"],
+        ) # aspirate drop in tip
 
         self.dispense(
             volume=self.volume, source=source, destination=source
         )  # return liquid to source
-        
+
+        self.drop_tip()
+
         return pendant_drop_camera.st_t
+
+    def clean_tip(self):
+        if not self.has_tip:
+            self.protocol_logger.error("no tip attached to clean tip!")
+            return
+        try:
+            sponge = self.CONTAINERS["sponge"]
+        except KeyError:
+            self.protocol_logger.error("No sponge container found!")
+            return
+
+        self.api.move_to_well(
+            pipette_id=self.PIPETTE_ID,
+            labware_id=sponge.LABWARE_ID,
+            well=sponge.well,
+            offset=self.OFFSET,
+        )
+        for i in range(3):
+            offset = self.OFFSET.copy()
+            offset['z'] = -5
+            self.api.move_to_well(
+                pipette_id=self.PIPETTE_ID,
+                labware_id=sponge.LABWARE_ID,
+                well=sponge.well,
+                offset=offset,
+                speed=50,
+            )
+            self.api.move_to_well(
+                pipette_id=self.PIPETTE_ID,
+                labware_id=sponge.LABWARE_ID,
+                well=sponge.well,
+                offset=self.OFFSET,
+                speed=50,
+            )
+        sponge.update_well()
 
     def __str__(self):
         return f"""

@@ -261,7 +261,7 @@ class PendantDropCamera:
                     b"Content-Type: image/jpeg\r\n\r\n" + self.plot_image + b"\r\n"
                 )
             else:
-                time.sleep(0.1)
+                time.sleep(1)
 
     def start_plot_frame_thread(self):
         self.plot_frame_thread = threading.Thread(target=self.generate_plot_frame)

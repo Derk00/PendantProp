@@ -24,6 +24,7 @@ class Configuration:
         self.RIGHT_PIPETTE_ID = None
         self.LEFT_PIPETTE_ID = None
         self.LABWARE = None
+        self.CONTAINERS = None 
         self.logger = Logger(
             name="protocol",
             file_path=f'experiments/{settings["EXPERIMENT_NAME"]}/meta_data',
@@ -55,7 +56,8 @@ class Configuration:
                 mount="right",
                 pipette_name=self.RIGHT_PIPETTE_NAME,
                 pipette_id=self.RIGHT_PIPETTE_ID,
-                tips_info=self.LABWARE["tips P1000, 1"],  # create list?
+                tips_info=self.LABWARE["tips P1000, 1"],
+                containers=self.CONTAINERS
             )
 
             self.LEFT_PIPETTE_ID = self.api.load_pipette(
@@ -67,6 +69,7 @@ class Configuration:
                 pipette_name=self.LEFT_PIPETTE_NAME,
                 pipette_id=self.LEFT_PIPETTE_ID,
                 tips_info=self.LABWARE["tips P20, 1"],
+                containers=self.CONTAINERS
             )
             self.logger.info("Pipettes loaded successfully")
             return {"right": right_pipette, "left": left_pipette}
@@ -134,6 +137,9 @@ class Configuration:
                 
                 elif function == "light_holder":
                     containers[labware_name] = LightHolder(labware_info=labware_info)
+                
+                elif function == "sponge":
+                    containers[labware_name] = Sponge(labware_info=labware_info)
 
                 elif function == "container":
                     container_class = labware_mapping.get(labware_name)
@@ -147,6 +153,7 @@ class Configuration:
                     )
 
             self.logger.info("Containers loaded successfully")
+            self.CONTAINERS = containers
             return containers
 
         except Exception as e:

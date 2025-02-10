@@ -246,6 +246,7 @@ class DropStage:
         self.DEPTH = labware_info["depth"]
         self.height_mm = labware_info["depth"]
         self.MAX_VOLUME = labware_info["max_volume"]
+        self.solution_name = "empty"
         os.makedirs(f"experiments/{settings['EXPERIMENT_NAME']}/data", exist_ok=True)
         os.makedirs(
             f"experiments/{settings['EXPERIMENT_NAME']}/data/{self.LABWARE_NAME}",
@@ -257,12 +258,10 @@ class DropStage:
         )
 
     def aspirate(self, volume):
-        self.container_logger.warning(
-            "Attempted to aspirate from drop stage. This should never be the case! Only dispense"
-        )
         pass
 
     def dispense(self, volume, source: Container):
+        self.solution_name = source.solution_name
         self.container_logger.info(
             f"Drop stage: measured pendant drop from {source.WELL_ID}. See container log for more details."
         )
@@ -310,4 +309,41 @@ class LightHolder:
 
         Container type: {self.CONTAINER_TYPE}
         Location: {self.LOCATION}
+        """
+
+
+class Sponge:
+    def __init__(self, labware_info):
+        settings = load_settings()
+        self.LABWARE_ID = labware_info["labware_id"]
+        self.LABWARE_NAME = labware_info["labware_name"]
+        self.LOCATION = labware_info["location"]
+        self.CONTAINER_TYPE = "Sponge"
+        self.ORDERING = labware_info["ordering"]
+        self.DEPTH = labware_info["depth"]
+        self.height_mm = labware_info["depth"]
+        self.MAX_VOLUME = labware_info["max_volume"]
+
+        self.index = 0
+        self.well = self.ORDERING[self.index]
+
+    def update_well(self):
+        self.index += 1
+        self.well = self.ORDERING[self.index]
+
+    def aspirate(self, volume):
+        print("Attempted to aspirate from sponge. This should never be the case!")
+        pass
+
+    def dispense(self, volume, source: Container):
+        print("Attempted to dispense from sponge. This should never be the case!")
+        pass
+
+    def __str__(self):
+        return f"""
+        Sponge object:
+
+        Container type: {self.CONTAINER_TYPE}
+        Location: {self.LOCATION}
+        Current well: {self.well}
         """

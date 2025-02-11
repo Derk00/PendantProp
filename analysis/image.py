@@ -90,6 +90,7 @@ class PendantDropAnalysis:
         # Find the bounding rectangle for the contour + De calculated
         x, y, w, h = cv2.boundingRect(longest_contour)
         de = w  #! important for calculation st
+        self.de = de
 
         # Draw arrowline + De
         touching_points_left = []
@@ -206,6 +207,7 @@ class PendantDropAnalysis:
 
         S = ds / de
         Hin = self.calculate_Hin(S)
+        self.Hin = Hin
         de_scaled = de * self.scale # pixels -> mm
         surface_tension = self.density * self.gravity_constant * (de_scaled**2) * Hin
 
@@ -226,7 +228,7 @@ class PendantDropAnalysis:
         if not (0.3 < S < 1):
             # self.logger.error("analysis: shape factor S is out of bounds")
             pass
-        
+
         # find value for 1/H for different values of S
         if (S >= 0.3) and (S <= 0.4):
             Hin = (
@@ -282,6 +284,19 @@ class PendantDropAnalysis:
         self.process_image()
         st = self.analyse()
         return st, self.analysis_image
+
+    def image2scale(self, img):
+        # surface_tension = self.density * self.gravity_constant * (de_scaled**2) * Hin
+        self.init_logger()
+        self.raw_image = img    
+        self.process_image()
+        st = self.analyse()
+        st_water = (
+            72.37  # mN/m, 22.5 degrees C, see https://srd.nist.gov/JPCRD/jpcrd231.pdf
+        )
+        de_scaled = np.sqrt(st_water / (self.density * self.gravity_constant * self.Hin))
+        scale = de_scaled / self.de
+        return scale
 
     def show_raw_image(self):
         cv2.imshow(winname=self.file_path, mat=self.raw_image)

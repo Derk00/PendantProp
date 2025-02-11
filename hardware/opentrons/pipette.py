@@ -385,7 +385,7 @@ class Pipette:
         )
         for i in range(3):
             offset = self.OFFSET.copy()
-            offset['z'] = -5
+            offset['z'] = -7
             self.api.move_to_well(
                 pipette_id=self.PIPETTE_ID,
                 labware_id=sponge.LABWARE_ID,

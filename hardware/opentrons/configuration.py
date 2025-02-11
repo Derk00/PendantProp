@@ -121,7 +121,7 @@ class Configuration:
                 "tube rack 15 mL": FalconTube15,
                 "glass vial rack": GlassVial,
                 "tube rack 50 mL": FalconTube50,
-                "plate 1": PlateWell
+                "plate": PlateWell
             }
             for i, function in enumerate(layout["function"]):
                 labware_name = layout.loc[i, "labware name"]

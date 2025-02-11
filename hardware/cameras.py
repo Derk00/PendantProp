@@ -85,6 +85,7 @@ class PendantDropCamera:
 
         # Initialize attributes
         self.st_t = None  # Will hold time series data for surface tension
+        self.scale_t = None # Will hold time series data for scale readings !for calibration
         self.current_image = None  # Latest image grabbed from the camera
         self.analysis_image = None  # Latest processed (analyzed) image
         self.plot_image = None  # Latest plot image (as JPEG bytes)
@@ -103,6 +104,7 @@ class PendantDropCamera:
         )
         self.well_id = well_id
         self.st_t = []  # List to store [time, surface tension] measurements
+        self.scale_t = [] # List to store [time, scale reading] measurements
         self.logger.info(f"camera: updated well id to {self.well_id}")
 
     def start_stream(self):
@@ -200,6 +202,8 @@ class PendantDropCamera:
             time_stamp = datetime.now()
             relative_time = (time_stamp - self.start_time).total_seconds()
             st, analysis_image = self.analyzer.image2st(img)
+            scale = self.analyzer.image2scale(img)
+            self.scale_t.append([relative_time, scale])
             self.st_t.append([relative_time, st])
             self.analysis_image = analysis_image
         except Exception as e:

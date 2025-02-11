@@ -1,7 +1,12 @@
 from analysis.image import PendantDropAnalysis
+import cv2
+test_image = cv2.imread("test.png")
+
 
 analyzer = PendantDropAnalysis()
-analyzer.image2st()
+scale = analyzer.image2scale(test_image)
+
+print(scale)
 # pedran.load_raw_image(file_path="graphic/pendant_drop_sarstedtp10.png")
 # pedran.process_image()
 # pedran.analyse()

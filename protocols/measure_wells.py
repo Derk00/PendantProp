@@ -10,7 +10,7 @@ from utils.load_save_functions import load_settings
 def prototcol_measure_wells(pendant_drop_camera: PendantDropCamera):
     n_measurement_in_eq = 10 # number of last frames to average over TODO make this a setting?
     settings = load_settings()
-    file_name = f"experiments/{settings['EXPERIMENT_NAME']}/meta_data/well_info.csv"
+    file_name = f"experiments/{settings['EXPERIMENT_NAME']}/meta_data/{settings['WELL_INFO_FILENAME']}"
     well_info = pd.read_csv(file_name)
     results = well_info.copy()
     results["well id"] = well_info["location"].astype(str) + well_info["well"]

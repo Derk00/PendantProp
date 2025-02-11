@@ -108,9 +108,11 @@ def input_calibration():
 
 @app.route("/calibrate", methods=["POST"])
 def calibrate():
-    threading.Thread(
+    thread = threading.Thread(
         target=prototcol_calibrate, args=(pendant_drop_camera,)
-    ).start()
+    )
+    thread.daemon = True
+    thread.start()
     session["last_action"] = "Calibration done"
     return redirect(url_for("index"))
 
@@ -142,15 +144,21 @@ def input_measure_wells():
 @app.route("/measure_wells", methods=["POST"])
 def measure_wells():
     settings = load_settings()
+    csv_file = request.files.get("csv_file")
+    settings["WELL_INFO_FILENAME"] = csv_file.filename
+    save_settings_meta_data(settings=settings)
+    save_settings(settings)
     save_csv_file(
         exp_name=settings["EXPERIMENT_NAME"],
         subdir_name="meta_data",
-        csv_file=request.files.get("csv_file"),
+        csv_file=csv_file,
         app=app,
     )
-    threading.Thread(
+    thread = threading.Thread(
         target=prototcol_measure_wells, args=(pendant_drop_camera,)
-    ).start()
+    )
+    thread.daemon = True
+    thread.start()
     session["last_action"] = "Measuring wells"
     return redirect(url_for("index"))
 

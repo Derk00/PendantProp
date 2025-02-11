@@ -410,6 +410,53 @@ class Pipette:
             )
         sponge.update_well()
 
+    def calibrate_pendant_drop(
+        self,
+        source: Container,
+        drop_volume: float,
+        delay: float,
+        flow_rate: float,
+        pendant_drop_camera: PendantDropCamera,
+        depth_offset: float = -23.4,
+    ):
+        if self.PIPETTE_NAME != "p20_single_gen2":
+            self.protocol_logger.error(
+                f"Wrong pipette is given. Expected p20_single_gen2 but got {self.PIPETTE_NAME}"
+            )
+            return
+
+        if self.has_tip == False:
+            self.pick_up_tip()
+
+        self.aspirate(volume=self.MAX_VOLUME, source=source, touch_tip=True)
+        self.clean_tip()
+        pendant_drop_camera.initialize_measurement(well_id=source.WELL_ID)
+        pendant_drop_camera.start_stream()
+        self.dispense(
+            volume=drop_volume,
+            source=source,
+            destination=self.CONTAINERS["drop_stage"],
+            depth_offset=depth_offset,
+            flow_rate=flow_rate,
+        )
+        pendant_drop_camera.start_capture()
+        self.api.delay(seconds=delay)
+        pendant_drop_camera.stop_capture()
+        pendant_drop_camera.stop_stream()
+        self.aspirate(
+            volume=drop_volume,
+            source=self.CONTAINERS["drop_stage"],
+            depth_offset=depth_offset,
+        )  # aspirate drop in tip
+
+        self.dispense(
+            volume=self.volume, source=source, destination=source, touch_tip=True
+        )  # return liquid to source
+
+        self.drop_tip()
+
+        return pendant_drop_camera.scale_t
+
     def __str__(self):
         return f"""
         Pipette object

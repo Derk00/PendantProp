@@ -248,24 +248,12 @@ class DropStage:
         self.height_mm = labware_info["depth"]
         self.MAX_VOLUME = labware_info["max_volume"]
         self.solution_name = "empty"
-        os.makedirs(f"experiments/{settings['EXPERIMENT_NAME']}/data", exist_ok=True)
-        os.makedirs(
-            f"experiments/{settings['EXPERIMENT_NAME']}/data/{self.LABWARE_NAME}",
-            exist_ok=True,
-        )
-        self.container_logger = Logger(
-            name=self.LABWARE_NAME,
-            file_path=f"experiments/{settings['EXPERIMENT_NAME']}/data/{self.LABWARE_NAME}",
-        )
 
     def aspirate(self, volume):
         pass
 
     def dispense(self, volume, source: Container):
         self.solution_name = source.solution_name
-        self.container_logger.info(
-            f"Drop stage: measured pendant drop from {source.WELL_ID}. See container log for more details."
-        )
         pass
 
     def __str__(self):

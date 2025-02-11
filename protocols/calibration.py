@@ -1,44 +1,28 @@
+import pandas as pd
+import numpy as np
+
 from hardware.opentrons.http_communications import Opentrons_http_api
 from hardware.opentrons.configuration import Configuration
 from hardware.cameras import PendantDropCamera
-
+from utils.load_save_functions import load_settings
 
 def prototcol_calibrate(pendant_drop_camera: PendantDropCamera):
     # initialize
+    settings = load_settings()
     api = Opentrons_http_api()
     api.initialise()
     config = Configuration(http_api=api)
     labware = config.load_labware()
-    pipettes = config.load_pipettes()
     containers = config.load_containers()
+    pipettes = config.load_pipettes()
     right_pipette = pipettes["right"]
     left_pipette = pipettes["left"]
-    pendant_drop_camera = pendant_drop_camera
-    pendant_drop_camera.initialize_measurement(well_id=containers["drop_stage"].WELL_ID)
 
-    # parameters
-    time_needle_attachment = (
-        20  # s, time for the user to attach the needle to the p20 pipette
-    )
-    time_calibration = (
-        20  # s, time for the user to measure pixels of needle diameter in FIJI
-    )
-    height_start = 50  # mm
-    height_end = 13  # mm
-
-    # executables
+    #! exucutable commands
     api.home()
-    left_pipette.move_to_well(
-        container=containers["drop_stage"], offset={"x": 0, "y": 0, "z": height_start}
-    )
-    api.delay(time_needle_attachment)
-    left_pipette.move_to_well(
-        container=containers["drop_stage"], offset={"x": 0, "y": 0, "z": height_end}
-    )
-    pendant_drop_camera.start_capture()
-    api.delay(time_calibration)
-    pendant_drop_camera.stop_capture()
-    left_pipette.move_to_well(
-        container=containers["drop_stage"], offset={"x": 0, "y": 0, "z": height_start}
-    )
-    api.delay(time_needle_attachment)
+    scale_t = left_pipette.calibrate_pendant_drop(source=containers["6A1"], drop_volume=13, delay=500, flow_rate=2, pendant_drop_camera=pendant_drop_camera)
+    df = pd.DataFrame(scale_t, columns=["time (s)", "scale"])
+    df.to_csv(f"experiments/{settings['EXPERIMENT_NAME']}/data/calibration.csv")
+    scale = [item[1] for item in scale_t]
+    average_scale = np.mean(scale)
+    print(f"average scale: {average_scale}")

@@ -1,19 +1,18 @@
 {
     "ROBOT_IP": "169.254.220.146",
     "ROBOT_TYPE": "OT2",
-    "EXPERIMENT_NAME": "xx",
+    "EXPERIMENT_NAME": "test_cali",
     "DROP_VOLUME": "13",
     "EQUILIBRATION_TIME": "30",
     "FLOW_RATE": "1",
     "DENSITY": "0.99776",
-    "SCALE": "0.00265789",
-    "DROP_HEIGHT": 19,
-    "NEEDLE_DIAMETER": 0.685,
+    "SCALE": "0.0026369648692579654",
     "DILUTION_FACTOR": "2",
     "EXPLORE_POINTS": "8",
     "EXPLOIT_POINTS": "4",
     "WELL_VOLUME": "200",
     "DYNAMIC_EQUILIBRATION_TIME": "True",
     "CONFIG_FILENAME": "layout_test.csv",
-    "UPLOAD_FOLDER": "/var/lib/jupyter/notebooks"
+    "UPLOAD_FOLDER": "/var/lib/jupyter/notebooks",
+    "WELL_INFO_FILENAME": "well_info.csv"
 }

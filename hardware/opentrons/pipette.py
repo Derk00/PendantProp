@@ -99,7 +99,14 @@ class Pipette:
         self.has_tip = False
         self.volume = 0
 
-    def aspirate(self, volume: float, source: Container, touch_tip=False, mix=None):
+    def aspirate(
+        self,
+        volume: float,
+        source: Container,
+        touch_tip=False,
+        mix=None,
+        depth_offset=0,
+    ):
 
         # check if pipette has tip
         if not self.has_tip:
@@ -133,7 +140,7 @@ class Pipette:
             labware_id=source.LABWARE_ID,
             well=source.WELL,
             volume=volume,
-            depth=source.height_mm - source.DEPTH,
+            depth=source.height_mm - source.DEPTH + depth_offset,
             offset=self.OFFSET,
         )
         if mix and (mix_order == "after" or mix_order == "both"):
@@ -338,7 +345,7 @@ class Pipette:
 
         if self.has_tip == False:
             self.pick_up_tip()
-        
+
         self.aspirate(volume=self.MAX_VOLUME, source=source, touch_tip=True)
         self.clean_tip()
         pendant_drop_camera.initialize_measurement(well_id=source.WELL_ID)
@@ -357,10 +364,11 @@ class Pipette:
         self.aspirate(
             volume=drop_volume,
             source=self.CONTAINERS["drop_stage"],
-        ) # aspirate drop in tip
+            depth_offset=depth_offset,
+        )  # aspirate drop in tip
 
         self.dispense(
-            volume=self.volume, source=source, destination=source
+            volume=self.volume, source=source, destination=source, touch_tip=True
         )  # return liquid to source
 
         self.drop_tip()
@@ -385,7 +393,7 @@ class Pipette:
         )
         for i in range(3):
             offset = self.OFFSET.copy()
-            offset['z'] = -7
+            offset["z"] = -7
             self.api.move_to_well(
                 pipette_id=self.PIPETTE_ID,
                 labware_id=sponge.LABWARE_ID,

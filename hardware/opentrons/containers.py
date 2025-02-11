@@ -230,7 +230,8 @@ class PlateWell(Container):
         self.CONTAINER_TYPE = "Plate Well"
 
     def update_liquid_height(self, volume_mL):
-        self.height_mm = 1e3 * (volume_mL) / (np.pi * (self.INNER_DIAMETER_MM / 2) ** 2)
+        # self.height_mm = 1e3 * (volume_mL) / (np.pi * (self.INNER_DIAMETER_MM / 2) ** 2)
+        self.height_mm = 2 # static height for now
         return self.height_mm
 
 

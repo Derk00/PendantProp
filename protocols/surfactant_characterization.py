@@ -8,9 +8,12 @@ def prototcol_surfactant_characterization():
     api.initialise()
     config = Configuration(http_api=api)
     labware = config.load_labware()
-    pipettes = config.load_pipettes()
     containers = config.load_containers()
+    pipettes = config.load_pipettes()
     right_pipette = pipettes["right"]
     left_pipette = pipettes["left"]
 
-    # TODO implement
+    #! exucutable commands
+    api.home()
+    right_pipette.pick_up_tip()
+    right_pipette.aspirate(1000, containers["3A1"])

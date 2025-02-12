@@ -64,21 +64,22 @@ class Container:
             file_path=f'experiments/{settings["EXPERIMENT_NAME"]}/meta_data',
         )
 
-    def aspirate(self, volume: float):
+    def aspirate(self, volume: float, log = True):
         if self.volume_mL < (volume * 1e-3):
-            self.protocol_logger.error(
+            self.protocol_logger.warning(
                 "Aspiration volume is larger than container volume!"
             )
             return
         self.volume_mL -= volume * 1e-3
         self.update_liquid_height(volume_mL=self.volume_mL)
-        self.container_logger.info(
-            f"Container: Aspirated {volume} uL from this container with content {self.solution_name}"
-        )
+        if log:
+            self.container_logger.info(
+                f"Container: Aspirated {volume} uL from this container with content {self.solution_name}"
+            )
 
-    def dispense(self, volume: float, source: "Container"):
+    def dispense(self, volume: float, source: "Container", log = True):
         if (self.volume_mL * 1e3) + volume > self.MAX_VOLUME:
-            self.protocol_logger.error("Overflowing of container!")
+            self.protocol_logger.warning("Overflowing of container!")
             return
         self.volume_mL += volume * 1e-3
         self.update_liquid_height(volume_mL=self.volume_mL)
@@ -97,16 +98,11 @@ class Container:
             # case container is empty and source is pure
             self.concentration = "pure"
             self.solution_name = source.solution_name
+        if log:
+            self.container_logger.info(
+                f"Container: Dispensed {volume} uL into this container from source {source.WELL} of {source.LABWARE_NAME} ({source.WELL_ID}) containing {source.solution_name}"
+            )
 
-        self.container_logger.info(
-            f"Container: Dispensed {volume} uL into this container from source {source.WELL} of {source.LABWARE_NAME} ({source.WELL_ID}) containing {source.solution_name}"
-        )
-
-    def measure_pendant_drop(self, p20_pipette, drop_volume: float):
-        pass
-
-    def update_liquid_height(self, volume_mL):
-        raise NotImplementedError("This method should be implemented by subclasses")
 
     def __str__(self):
         return f"""

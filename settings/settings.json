@@ -1,7 +1,7 @@
 {
     "ROBOT_IP": "169.254.220.146",
     "ROBOT_TYPE": "OT2",
-    "EXPERIMENT_NAME": "test_tube_rack2",
+    "EXPERIMENT_NAME": "test_air_gap",
     "DROP_VOLUME": "8",
     "EQUILIBRATION_TIME": "900",
     "FLOW_RATE": "2",

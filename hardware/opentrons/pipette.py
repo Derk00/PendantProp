@@ -51,6 +51,8 @@ class Pipette:
 
         self.ORDERING = tips_info["ordering"]
         self.well_index = 0
+        self.last_source = None
+        self.last_destination = None
 
     def pick_up_tip(self, well=None):
         if self.has_tip:
@@ -107,7 +109,8 @@ class Pipette:
         touch_tip=False,
         mix=None,
         depth_offset=0,
-        log = True
+        log=True,
+        update_info=True,
     ):
 
         # check if pipette has tip
@@ -152,14 +155,17 @@ class Pipette:
             self.touch_tip(container=source)
 
         # update information:
-        source.aspirate(volume, log=log)
-        if (
-            self.current_solution != "empty"
-            and self.current_solution != source.solution_name
-        ):
-            self.clean = False
-        self.current_solution = source.solution_name
-        self.volume += volume
+        if update_info:
+            source.aspirate(volume, log=log)
+            if (
+                self.current_solution != "empty"
+                and self.current_solution != source.solution_name
+            ):
+                self.clean = False
+            self.current_solution = source.solution_name
+            self.volume += volume
+            self.last_source = source
+
         if log:
             self.protocol_logger.info(
                 f"Aspirated {volume} uL from {source.solution_name} (well {source.WELL } on {source.LABWARE_NAME}) with {self.MOUNT} pipette ({self.PIPETTE_NAME})"
@@ -168,14 +174,14 @@ class Pipette:
     def dispense(
         self,
         volume: float,
-        source: Container,
         destination: Container,
         touch_tip=False,
         mix=None,
         blow_out=False,
         depth_offset=0,
         flow_rate=100,
-        log = True,
+        log=True,
+        update_info=True,
     ):
         if not self.has_tip:
             self.protocol_logger.error(
@@ -213,9 +219,11 @@ class Pipette:
         if touch_tip:
             self.touch_tip(container=destination)
 
-        # update information
-        self.volume -= volume
-        destination.dispense(volume=volume, source=source, log=log)
+        if update_info:
+            self.volume -= volume
+            self.last_destination = destination
+            destination.dispense(volume=volume, source=self.last_source, log=log)
+
         if log:
             self.protocol_logger.info(
                 f"Dispensed {volume} uL into well {destination.WELL_ID} with {self.MOUNT} pipette ({self.PIPETTE_NAME})"
@@ -236,7 +244,6 @@ class Pipette:
         self.aspirate(volume=volume, source=source, touch_tip=touch_tip, mix=mix)
         self.dispense(
             volume=volume,
-            source=source,
             destination=destination,
             touch_tip=touch_tip,
             mix=mix,
@@ -258,7 +265,7 @@ class Pipette:
             offset=offset_move,
         )
 
-    def move_to_tip(self, well: str, offset: dict = dict(x=0, y=0, z=0)):
+    def move_to_well_calibrate(self, well: str, offset: dict = dict(x=0, y=0, z=0)):
         # This is used to check offset of pipettes!!
         self.api.move_to_well(
             pipette_id=self.PIPETTE_ID,
@@ -303,14 +310,14 @@ class Pipette:
                     labware_id=container.LABWARE_ID,
                     well=container.WELL,
                     offset=offset,
-                    speed=50,
+                    speed=30,
                 )
                 self.api.move_to_well(
                     pipette_id=self.PIPETTE_ID,
                     labware_id=container.LABWARE_ID,
                     well=container.WELL,
                     offset=initial_offset,
-                    speed=50,
+                    speed=30,
                 )
 
         self.protocol_logger.info(f"touched tip, repeated {repeat} times")
@@ -319,7 +326,7 @@ class Pipette:
         mix_order, volume_mix, repeat_mix = mix
         for n in range(repeat_mix):
             self.aspirate(volume=volume_mix, source=container, log=False)
-            self.dispense(volume=volume_mix, source=container, destination=container, log=False)
+            self.dispense(volume=volume_mix, destination=container, log=False)
         self.protocol_logger.info(
             f"done with mixing in {container.WELL_ID} with order {mix_order}, with volume {volume_mix}, repeated {repeat_mix} times"
         )
@@ -333,52 +340,59 @@ class Pipette:
         )
         self.protocol_logger.info(f"blow out done in container {container.WELL_ID}")
 
-    def measure_pendant_drop(
-        self,
-        source: Container,
-        drop_volume: float,
-        delay: float,
-        flow_rate: float,
-        pendant_drop_camera: PendantDropCamera,
-        depth_offset: float = -23.4,
-    ):
-        if self.PIPETTE_NAME != "p20_single_gen2":
-            self.protocol_logger.error(
-                f"Wrong pipette is given. Expected p20_single_gen2 but got {self.PIPETTE_NAME}"
-            )
+    def air_gap(self, air_volume: float):
+        if not self.has_tip:
+            self.protocol_logger.error("no tip attached to perform air_gap!")
             return
 
-        if self.has_tip == False:
-            self.pick_up_tip()
+        if air_volume + self.volume > self.MAX_VOLUME:
+            self.protocol_logger.error("air gap exceeds pipette capacity!")
+            return
 
-        self.aspirate(volume=self.MAX_VOLUME, source=source)
-        self.clean_tip()
-        pendant_drop_camera.initialize_measurement(well_id=source.WELL_ID)
-        pendant_drop_camera.start_stream()
-        self.dispense(
-            volume=drop_volume,
-            source=source,
-            destination=self.CONTAINERS["drop_stage"],
-            depth_offset=depth_offset,
-            flow_rate=flow_rate,
-        )
-        pendant_drop_camera.start_capture()
-        self.api.delay(seconds=delay)
-        pendant_drop_camera.stop_capture()
-        pendant_drop_camera.stop_stream()
+        if self.last_source == None:
+            self.protocol_logger.error(
+                "no source location found, needed to perform air gap!"
+            )
+            return
+        depth_offset = 0.05 * self.last_source.DEPTH + self.last_source.height_mm
         self.aspirate(
-            volume=drop_volume,
-            source=self.CONTAINERS["drop_stage"],
+            volume=air_volume,
+            source=self.last_source,
             depth_offset=depth_offset,
-        )  # aspirate drop in tip
+            log=False,
+            update_info=False,
+        )
+        self.protocol_logger.info(
+            f"air gap of {air_volume} uL performed in {self.MOUNT} pipette."
+        )
 
+    def remove_air_gap(self, air_volume: float, at_drop_stage: bool = False):
+        if not self.has_tip:
+            self.protocol_logger.error("no tip attached to remove air_gap!")
+            return
+        
+        if at_drop_stage:
+            container = self.CONTAINERS["drop_stage"]
+        else:
+            if self.last_destination is not None:
+                container = self.last_destination
+            elif self.last_source is not None:
+                container = self.last_source
+            else:
+                self.protocol_logger.error(
+                    "no source or destination location found, needed to remove air gap!"
+                )
+                return
+
+        depth_offset = 0.05 * container.DEPTH + container.height_mm
         self.dispense(
-            volume=self.volume, source=source, destination=source
-        )  # return liquid to source
-
-        self.drop_tip()
-
-        return pendant_drop_camera.st_t
+            volume=air_volume,
+            destination=container,
+            depth_offset=depth_offset,
+            log=False,
+            update_info=False,
+        )
+        self.protocol_logger.info(f"air gap of {air_volume} uL removed in {self.MOUNT} pipette.")
 
     def clean_tip(self):
         if not self.has_tip:
@@ -404,16 +418,62 @@ class Pipette:
                 labware_id=sponge.LABWARE_ID,
                 well=sponge.well,
                 offset=offset,
-                speed=50,
+                speed=30,
             )
             self.api.move_to_well(
                 pipette_id=self.PIPETTE_ID,
                 labware_id=sponge.LABWARE_ID,
                 well=sponge.well,
                 offset=self.OFFSET,
-                speed=50,
+                speed=30,
             )
         sponge.update_well()
+
+    def measure_pendant_drop(
+        self,
+        source: Container,
+        drop_volume: float,
+        delay: float,
+        flow_rate: float,
+        pendant_drop_camera: PendantDropCamera,
+        depth_offset: float = -23.4,
+    ):
+        if self.PIPETTE_NAME != "p20_single_gen2":
+            self.protocol_logger.error(
+                f"Wrong pipette is given. Expected p20_single_gen2 but got {self.PIPETTE_NAME}"
+            )
+            return
+
+        if self.has_tip == False:
+            self.pick_up_tip()
+
+        self.aspirate(volume=15, source=source)
+        self.air_gap(air_volume=5)
+        self.clean_tip()
+        self.remove_air_gap(air_volume=5)
+        pendant_drop_camera.initialize_measurement(well_id=source.WELL_ID)
+        pendant_drop_camera.start_stream()
+        self.dispense(
+            volume=drop_volume,
+            destination=self.CONTAINERS["drop_stage"],
+            depth_offset=depth_offset,
+            flow_rate=flow_rate,
+        )
+        pendant_drop_camera.start_capture()
+        self.api.delay(seconds=delay)
+        pendant_drop_camera.stop_capture()
+        pendant_drop_camera.stop_stream()
+        self.aspirate(
+            volume=drop_volume,
+            source=self.CONTAINERS["drop_stage"],
+            depth_offset=depth_offset,
+        )  # aspirate drop in tip
+
+        self.dispense(volume=self.volume, destination=source)  # return liquid to source
+
+        self.drop_tip()
+
+        return pendant_drop_camera.st_t
 
     def calibrate_pendant_drop(
         self,
@@ -439,7 +499,6 @@ class Pipette:
         pendant_drop_camera.start_stream()
         self.dispense(
             volume=drop_volume,
-            source=source,
             destination=self.CONTAINERS["drop_stage"],
             depth_offset=depth_offset,
             flow_rate=flow_rate,
@@ -455,7 +514,7 @@ class Pipette:
         )  # aspirate drop in tip
 
         self.dispense(
-            volume=self.volume, source=source, destination=source, touch_tip=True
+            volume=self.volume, destination=source, touch_tip=True
         )  # return liquid to source
 
         self.drop_tip()
@@ -473,32 +532,59 @@ class Pipette:
         well_id_surfactant = get_well_id(containers, solution=surfactant_name)
         well_id_trash = get_well_id(containers, solution="trash")
 
-        self.protocol_logger.info(f"Serial dilution of {surfactant_name} in row {row_id}, with explore points {explore_points}")
-        
+        self.protocol_logger.info(
+            f"Serial dilution of {surfactant_name} in row {row_id}, with explore points {explore_points}"
+        )
+
         if self.has_tip == False:
             self.pick_up_tip()
 
         # adding water to all wells
         for i in range(explore_points):
-            self.transfer(volume=well_volume, source=containers[well_id_water], destination=containers[f'6A{i+1}'], touch_tip=True)
+            self.transfer(
+                volume=well_volume,
+                source=containers[well_id_water],
+                destination=containers[f"6A{i+1}"],
+                touch_tip=True,
+            )
         self.drop_tip()
 
         # adding surfactant to the first well
         self.pick_up_tip()
-        self.aspirate(volume=well_volume, source=containers[well_id_surfactant], touch_tip=True)
-        self.dispense(volume=well_volume, source = containers[well_id_surfactant], destination=containers["6A1"], touch_tip=True, mix=("after", well_volume/2, 5))
+        self.aspirate(
+            volume=well_volume, source=containers[well_id_surfactant], touch_tip=True
+        )
+        self.dispense(
+            volume=well_volume,
+            destination=containers["6A1"],
+            touch_tip=True,
+            mix=("after", well_volume / 2, 5),
+        )
 
         # serial dilution of surfactant
         for i in range(1, explore_points):
-            self.aspirate(volume=well_volume, source=containers[f"{row_id}{i}"], touch_tip=True)
-            self.dispense(volume=well_volume, source=containers[f"{row_id}{i}"], destination=containers[f"{row_id}{i+1}"], touch_tip=True, mix=("after", well_volume/2, 5))
-        
+            self.aspirate(
+                volume=well_volume, source=containers[f"{row_id}{i}"], touch_tip=True
+            )
+            self.dispense(
+                volume=well_volume,
+                destination=containers[f"{row_id}{i+1}"],
+                touch_tip=True,
+                mix=("after", well_volume / 2, 5),
+            )
+
         # transfering half of the volume of the last well to trash to ensure equal volume in all wells
-        self.aspirate(volume=well_volume, source=containers[f"{row_id}{explore_points}"], touch_tip=True)
-        self.dispense(volume=well_volume, source=containers[f"{row_id}{explore_points}"], destination=containers[well_id_trash], touch_tip=True)
+        self.aspirate(
+            volume=well_volume,
+            source=containers[f"{row_id}{explore_points}"],
+            touch_tip=True,
+        )
+        self.dispense(
+            volume=well_volume, destination=containers[well_id_trash], touch_tip=True
+        )
 
         self.drop_tip()
-    
+
     def __str__(self):
         return f"""
         Pipette object

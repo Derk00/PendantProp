@@ -171,10 +171,14 @@ def input_surfactant_characterization():
 @app.route("/characterize", methods=["POST"])
 def characterize():
     settings = load_settings()
+    csv_file = request.files.get("csv_file")
+    settings["CHARACTERIZATION_INFO_FILENAME"] = csv_file.filename
+    save_settings_meta_data(settings=settings)
+    save_settings(settings)
     save_csv_file(
         exp_name=settings["EXPERIMENT_NAME"],
         subdir_name="meta_data",
-        csv_file=request.files.get("csv_file"),
+        csv_file=csv_file,
         app=app,
     )
     prototcol_surfactant_characterization()

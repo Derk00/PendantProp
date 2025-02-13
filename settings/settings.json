@@ -1,8 +1,8 @@
 {
     "ROBOT_IP": "169.254.220.146",
     "ROBOT_TYPE": "OT2",
-    "EXPERIMENT_NAME": "test_air_gap",
-    "DROP_VOLUME": "8",
+    "EXPERIMENT_NAME": "AsCatPep_PAS_0013B_goed",
+    "DROP_VOLUME": "10",
     "EQUILIBRATION_TIME": "900",
     "FLOW_RATE": "2",
     "DENSITY": "0.99776",
@@ -12,7 +12,8 @@
     "EXPLOIT_POINTS": "4",
     "WELL_VOLUME": "200",
     "DYNAMIC_EQUILIBRATION_TIME": "True",
-    "CONFIG_FILENAME": "layout_test.csv",
+    "CONFIG_FILENAME": "layout_test_justin2.csv",
     "UPLOAD_FOLDER": "/var/lib/jupyter/notebooks",
-    "WELL_INFO_FILENAME": "well_info_justin.csv"
+    "WELL_INFO_FILENAME": "well_info_justin.csv",
+    "CHARACTERIZATION_INFO_FILENAME": "characterization_info.csv"
 }

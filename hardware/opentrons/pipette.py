@@ -111,6 +111,7 @@ class Pipette:
         touch_tip=False,
         mix=None,
         depth_offset=0,
+        flow_rate=100,
         log=True,
         update_info=True,
     ):
@@ -149,6 +150,7 @@ class Pipette:
             volume=volume,
             depth=source.height_mm - source.DEPTH + depth_offset,
             offset=self.OFFSET,
+            flow_rate=flow_rate
         )
         if mix and (mix_order == "after" or mix_order == "both"):
             self.mixing(container=source, mix=mix)
@@ -356,11 +358,16 @@ class Pipette:
                 "no source location found, needed to perform air gap!"
             )
             return
-        depth_offset = 0.05 * self.last_source.DEPTH + self.last_source.height_mm
+        height_percentage = 0.05
+        if self.last_source.CONTAINER_TYPE == "Plate Well":
+            height_percentage = 1 # needed as plate height is standard 2 mm at the moment #TODO change?
+        depth_offset = height_percentage * self.last_source.DEPTH + self.last_source.height_mm
+        flow_rate = air_volume / 3
         self.aspirate(
             volume=air_volume,
             source=self.last_source,
             depth_offset=depth_offset,
+            flow_rate=flow_rate,
             log=False,
             update_info=False,
         )
@@ -373,7 +380,7 @@ class Pipette:
         if not self.has_tip:
             self.protocol_logger.error("no tip attached to remove air_gap!")
             return
-        
+
         if at_drop_stage:
             container = self.CONTAINERS["drop_stage"]
         else:
@@ -386,12 +393,16 @@ class Pipette:
                     "no source or destination location found, needed to remove air gap!"
                 )
                 return
-
-        depth_offset = 0.05 * container.DEPTH + container.height_mm
+        height_percentage = 0.05
+        if container.CONTAINER_TYPE == "Plate Well":
+            height_percentage = 1
+        depth_offset = height_percentage * container.DEPTH + container.height_mm
+        flow_rate = self.air_gap_volume / 3
         self.dispense(
             volume=self.air_gap_volume,
             destination=container,
             depth_offset=depth_offset,
+            flow_rate=flow_rate,
             log=False,
             update_info=False,
         )
@@ -452,7 +463,7 @@ class Pipette:
         if self.has_tip == False:
             self.pick_up_tip()
 
-        self.aspirate(volume=15, source=source)
+        self.aspirate(volume=15, source=source, flow_rate=flow_rate, mix=("before", 15, 5))
         self.air_gap(air_volume=5)
         self.clean_tip()
         self.remove_air_gap(at_drop_stage=True)
@@ -505,7 +516,7 @@ class Pipette:
             self.transfer(
                 volume=well_volume,
                 source=containers[well_id_water],
-                destination=containers[f"6A{i+1}"],
+                destination=containers[f"{row_id}{i+1}"],
                 touch_tip=True,
             )
         self.drop_tip()
@@ -517,7 +528,7 @@ class Pipette:
         )
         self.dispense(
             volume=well_volume,
-            destination=containers["6A1"],
+            destination=containers[f"{row_id}1"],
             touch_tip=True,
             mix=("after", well_volume / 2, 5),
         )

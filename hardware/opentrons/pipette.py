@@ -53,6 +53,7 @@ class Pipette:
         self.well_index = 0
         self.last_source = None
         self.last_destination = None
+        self.air_gap_volume = 0
 
     def pick_up_tip(self, well=None):
         if self.has_tip:
@@ -101,6 +102,7 @@ class Pipette:
             )
         self.has_tip = False
         self.volume = 0
+        self.current_solution = "empty"
 
     def aspirate(
         self,
@@ -362,11 +364,12 @@ class Pipette:
             log=False,
             update_info=False,
         )
+        self.air_gap_volume = air_volume
         self.protocol_logger.info(
             f"air gap of {air_volume} uL performed in {self.MOUNT} pipette."
         )
 
-    def remove_air_gap(self, air_volume: float, at_drop_stage: bool = False):
+    def remove_air_gap(self, at_drop_stage: bool = False):
         if not self.has_tip:
             self.protocol_logger.error("no tip attached to remove air_gap!")
             return
@@ -386,13 +389,14 @@ class Pipette:
 
         depth_offset = 0.05 * container.DEPTH + container.height_mm
         self.dispense(
-            volume=air_volume,
+            volume=self.air_gap_volume,
             destination=container,
             depth_offset=depth_offset,
             log=False,
             update_info=False,
         )
-        self.protocol_logger.info(f"air gap of {air_volume} uL removed in {self.MOUNT} pipette.")
+        self.protocol_logger.info(f"air gap of {self.air_gap_volume} uL removed in {self.MOUNT} pipette.")
+        self.air_gap_volume = 0
 
     def clean_tip(self):
         if not self.has_tip:
@@ -437,6 +441,7 @@ class Pipette:
         flow_rate: float,
         pendant_drop_camera: PendantDropCamera,
         depth_offset: float = -23.4,
+        calibrate = False
     ):
         if self.PIPETTE_NAME != "p20_single_gen2":
             self.protocol_logger.error(
@@ -450,7 +455,7 @@ class Pipette:
         self.aspirate(volume=15, source=source)
         self.air_gap(air_volume=5)
         self.clean_tip()
-        self.remove_air_gap(air_volume=5)
+        self.remove_air_gap(at_drop_stage=True)
         pendant_drop_camera.initialize_measurement(well_id=source.WELL_ID)
         pendant_drop_camera.start_stream()
         self.dispense(
@@ -472,54 +477,10 @@ class Pipette:
         self.dispense(volume=self.volume, destination=source)  # return liquid to source
 
         self.drop_tip()
-
-        return pendant_drop_camera.st_t
-
-    def calibrate_pendant_drop(
-        self,
-        source: Container,
-        drop_volume: float,
-        delay: float,
-        flow_rate: float,
-        pendant_drop_camera: PendantDropCamera,
-        depth_offset: float = -23.4,
-    ):
-        if self.PIPETTE_NAME != "p20_single_gen2":
-            self.protocol_logger.error(
-                f"Wrong pipette is given. Expected p20_single_gen2 but got {self.PIPETTE_NAME}"
-            )
-            return
-
-        if self.has_tip == False:
-            self.pick_up_tip()
-
-        self.aspirate(volume=self.MAX_VOLUME, source=source, touch_tip=True)
-        self.clean_tip()
-        pendant_drop_camera.initialize_measurement(well_id=source.WELL_ID)
-        pendant_drop_camera.start_stream()
-        self.dispense(
-            volume=drop_volume,
-            destination=self.CONTAINERS["drop_stage"],
-            depth_offset=depth_offset,
-            flow_rate=flow_rate,
-        )
-        pendant_drop_camera.start_capture()
-        self.api.delay(seconds=delay)
-        pendant_drop_camera.stop_capture()
-        pendant_drop_camera.stop_stream()
-        self.aspirate(
-            volume=drop_volume,
-            source=self.CONTAINERS["drop_stage"],
-            depth_offset=depth_offset,
-        )  # aspirate drop in tip
-
-        self.dispense(
-            volume=self.volume, destination=source, touch_tip=True
-        )  # return liquid to source
-
-        self.drop_tip()
-
-        return pendant_drop_camera.scale_t
+        if calibrate:
+            return pendant_drop_camera.scale_t
+        else:
+            return pendant_drop_camera.st_t
 
     def serial_dilution(self, row_id: str, surfactant_name: str):
         # initialising variables

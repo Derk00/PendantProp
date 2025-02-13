@@ -244,6 +244,7 @@ class DropStage:
         self.height_mm = labware_info["depth"]
         self.MAX_VOLUME = labware_info["max_volume"]
         self.solution_name = "empty"
+        self.concentration = "pure"
 
     def aspirate(self, volume, log = True):
         pass

@@ -13,7 +13,7 @@ cv2.namedWindow("Pendant Drop Camera Feed", cv2.WINDOW_NORMAL)
 
 try:
     buffer = b""
-    for frame in pd_cam.generate_plot_frame():
+    for frame in pd_cam.generate_frames():
         buffer += frame
         start = buffer.find(b"\xff\xd8")  # JPEG start
         end = buffer.find(b"\xff\xd9")  # JPEG end

@@ -20,7 +20,7 @@ def prototcol_calibrate(pendant_drop_camera: PendantDropCamera):
 
     #! exucutable commands
     api.home()
-    scale_t = left_pipette.calibrate_pendant_drop(source=containers["6A1"], drop_volume=13, delay=500, flow_rate=2, pendant_drop_camera=pendant_drop_camera)
+    scale_t = left_pipette.calibrate_pendant_drop(source=containers["6A1"], drop_volume=13, delay=100, flow_rate=2, pendant_drop_camera=pendant_drop_camera)
     df = pd.DataFrame(scale_t, columns=["time (s)", "scale"])
     df.to_csv(f"experiments/{settings['EXPERIMENT_NAME']}/data/calibration.csv")
     scale = [item[1] for item in scale_t]

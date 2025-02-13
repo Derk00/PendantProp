@@ -245,10 +245,10 @@ class DropStage:
         self.MAX_VOLUME = labware_info["max_volume"]
         self.solution_name = "empty"
 
-    def aspirate(self, volume):
+    def aspirate(self, volume, log = True):
         pass
 
-    def dispense(self, volume, source: Container):
+    def dispense(self, volume, source: Container, log = True):
         self.solution_name = source.solution_name
         pass
 

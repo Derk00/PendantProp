@@ -351,7 +351,7 @@ class Pipette:
         if self.has_tip == False:
             self.pick_up_tip()
 
-        self.aspirate(volume=self.MAX_VOLUME, source=source, touch_tip=True)
+        self.aspirate(volume=self.MAX_VOLUME, source=source)
         self.clean_tip()
         pendant_drop_camera.initialize_measurement(well_id=source.WELL_ID)
         pendant_drop_camera.start_stream()
@@ -373,7 +373,7 @@ class Pipette:
         )  # aspirate drop in tip
 
         self.dispense(
-            volume=self.volume, source=source, destination=source, touch_tip=True
+            volume=self.volume, source=source, destination=source
         )  # return liquid to source
 
         self.drop_tip()

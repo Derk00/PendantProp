@@ -8,13 +8,14 @@ from hardware.sensor.sensor_api import SensorApi
 from utils.load_save_functions import load_settings
 
 def prototcol_measure_wells(pendant_drop_camera: PendantDropCamera):
-    n_measurement_in_eq = 10 # number of last frames to average over TODO make this a setting?
+    n_measurement_in_eq = 100 # number of last frames to average over TODO make this a setting?
     settings = load_settings()
     file_name = f"experiments/{settings['EXPERIMENT_NAME']}/meta_data/{settings['WELL_INFO_FILENAME']}"
     well_info = pd.read_csv(file_name)
     results = well_info.copy()
     results["well id"] = well_info["location"].astype(str) + well_info["well"]
     well_ids = results["well id"]
+    drop_volumes = results["drop volume (uL)"]
 
     # initialize
     api = Opentrons_http_api()
@@ -30,11 +31,11 @@ def prototcol_measure_wells(pendant_drop_camera: PendantDropCamera):
     #! exucutable commands
     api.home()
 
-    for well_id in well_ids:
+    for i, well_id in enumerate(well_ids):
         sensor_data = sensor_api.capture_sensor_data()
         st_t = left_pipette.measure_pendant_drop(
             source=containers[well_id], 
-            drop_volume=float(settings["DROP_VOLUME"]),
+            drop_volume=float(drop_volumes[i]),
             delay=float(settings["EQUILIBRATION_TIME"]),
             flow_rate=float(settings["FLOW_RATE"]),
             pendant_drop_camera=pendant_drop_camera

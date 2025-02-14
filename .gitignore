@@ -5,4 +5,5 @@
 legacy/ot2_ssh_key
 experiments/**/*.json
 experiments/**/*.log
+settings/*.json
 hardware/sensor/*.txt

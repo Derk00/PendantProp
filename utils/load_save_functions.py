@@ -1,6 +1,7 @@
 import os
 import json
 import csv
+import subprocess
 
 def save_csv_file(exp_name: str, subdir_name: str, csv_file, app):
     """
@@ -62,6 +63,18 @@ def save_instances_to_csv(instances, filename):
         # Write the data rows
         for instance in instances:
             writer.writerow(vars(instance))
+
+
+def load_commit_hash():
+    try:
+        commit_hash = (
+            subprocess.check_output(["git", "rev-parse", "HEAD"])
+            .strip()
+            .decode("utf-8")
+        )
+        return commit_hash
+    except subprocess.CalledProcessError:
+        return None
 
 
 if __name__ == "__main__":

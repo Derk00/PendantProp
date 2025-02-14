@@ -16,6 +16,7 @@ from utils.load_save_functions import (
     load_settings,
     save_settings,
     save_settings_meta_data,
+    load_commit_hash
 )
 from hardware.cameras import OpentronCamera, PendantDropCamera
 from protocols.calibration import prototcol_calibrate
@@ -89,7 +90,7 @@ def initialisation():
     exp_name = request.form.get("exp_name")
     settings = load_settings()
     settings["EXPERIMENT_NAME"] = exp_name
-
+    settings["GIT_COMMIT_HASH"] = load_commit_hash()
     csv_file = request.files.get("csv_file")
     settings["CONFIG_FILENAME"] = csv_file.filename
     sub_dir = "meta_data"

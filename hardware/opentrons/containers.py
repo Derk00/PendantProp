@@ -74,7 +74,7 @@ class Container:
         self.update_liquid_height(volume_mL=self.volume_mL)
         if log:
             self.container_logger.info(
-                f"Container: Aspirated {volume} uL from this container with content {self.solution_name}"
+                f"Container: aspirated {volume} uL from this container with content {self.concentration} mM {self.solution_name}."
             )
 
     def dispense(self, volume: float, source: "Container", log = True):
@@ -100,7 +100,7 @@ class Container:
             self.solution_name = source.solution_name
         if log:
             self.container_logger.info(
-                f"Container: Dispensed {volume} uL into this container from source {source.WELL} of {source.LABWARE_NAME} ({source.WELL_ID}) containing {source.solution_name}"
+                f"Container: dispensed {volume} uL into this container from source {source.WELL_ID} containing {source.concentration} mM {source.solution_name}."
             )
 
 

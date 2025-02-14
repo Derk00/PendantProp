@@ -1,20 +1,20 @@
 {
     "ROBOT_IP": "169.254.220.146",
     "ROBOT_TYPE": "OT2",
-    "EXPERIMENT_NAME": "test_measure_wells",
+    "EXPERIMENT_NAME": "test_characterization3",
     "DROP_VOLUME": "10",
-    "EQUILIBRATION_TIME": "900",
+    "EQUILIBRATION_TIME": "30",
     "FLOW_RATE": "2",
     "DENSITY": "0.99776",
     "SCALE": "0.002621118714249117",
     "DILUTION_FACTOR": "2",
-    "EXPLORE_POINTS": "8",
+    "EXPLORE_POINTS": "2",
     "EXPLOIT_POINTS": "4",
     "WELL_VOLUME": "200",
     "DYNAMIC_EQUILIBRATION_TIME": "True",
-    "CONFIG_FILENAME": "layout_test.csv",
+    "CONFIG_FILENAME": "layout_characterization.csv",
     "UPLOAD_FOLDER": "/var/lib/jupyter/notebooks",
     "WELL_INFO_FILENAME": "well_info.csv",
     "CHARACTERIZATION_INFO_FILENAME": "characterization_info.csv",
-    "GIT_COMMIT_HASH": "7f7e08c8367f1b90a4130f2b18eb2bf21d58f4d5"
+    "GIT_COMMIT_HASH": "bd3d23dcf851e155d9c1c95ba15f59c70179f410"
 }

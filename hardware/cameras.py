@@ -74,7 +74,6 @@ class PendantDropCamera:
             self.stop_background_threads = Event()
             self.running = False
             self.streaming = False
-            print("Camera: initialized")
         except:
             print(
                 "Camera: Could not find pendant drop camera. Close camera software and check cables."
@@ -105,7 +104,6 @@ class PendantDropCamera:
         self.well_id = well_id
         self.st_t = []  # List to store [time, surface tension] measurements
         self.scale_t = [] # List to store [time, scale reading] measurements
-        self.logger.info(f"camera: updated well id to {self.well_id}")
 
     def start_stream(self):
         if not self.streaming:
@@ -122,6 +120,7 @@ class PendantDropCamera:
                 target=self._process_thread, daemon=True
             )
             self.process_thread.start()
+            self.logger.info(f"camera: start measuring {self.well_id}")
 
     def _stream(self):
         self.camera.StartGrabbing(pylon.GrabStrategy_LatestImageOnly)
@@ -220,6 +219,7 @@ class PendantDropCamera:
         self.process_thread = None
         self.analysis_image = None
         self.current_image = None
+        self.logger.info(f"camera: stopped measurement")
 
     def stop_stream(self):
         self.streaming = False

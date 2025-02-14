@@ -1,0 +1,5 @@
+from hardware.cameras import PendantDropCamera
+from protocols.surfactant_characterization import prototcol_surfactant_characterization
+
+pd_cam = PendantDropCamera()
+prototcol_surfactant_characterization(pendant_drop_camera=pd_cam)

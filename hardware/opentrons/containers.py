@@ -47,7 +47,7 @@ class Container:
         self.volume_mL = self.INITIAL_VOLUME_ML
         self.height_mm = self.INITIAL_HEIGHT_MM
         self.solution_name = solution_name
-        self.concentration = concentration  # TODO this can be extended to mixtures
+        self.concentration = concentration 
 
         # Create logger (container & protocol)
         os.makedirs(f"experiments/{settings['EXPERIMENT_NAME']}/data", exist_ok=True)
@@ -84,25 +84,42 @@ class Container:
         self.volume_mL += volume * 1e-3
         self.update_liquid_height(volume_mL=self.volume_mL)
 
-        if source.concentration != "pure":
-            # case source contains solution
+        # case 1: container is empty
+        if self.solution_name == "empty":
+            self.solution_name = source.solution_name
+            self.concentration = source.concentration
+
+        # case 2: container contains water and solution is added from source
+        elif self.solution_name == "water" and source.solution_name != "water":
+            self.solution_name = source.solution_name
+            self.concentration = (float(source.concentration) * volume*1e-3) / self.volume_mL
+
+        # case 3: containers contains solution and water is added from source
+        elif self.solution_name != "water" and source.solution_name == "water":
             self.concentration = (
-                float(source.concentration) * volume * 1e-3 / self.volume_mL
-            )
-            self.solution_name = source.solution_name
-        elif self.concentration != "pure":
-            # case container contains solution and source is water
-            self.concentration = self.concentration * volume * 1e-3 / self.volume_mL
-            self.solution_name = self.solution_name
+                float(self.concentration) * volume * 1e-3
+            ) / self.volume_mL
+
+        # case 4: container contains solution and same solution, but different concentration, is added from source
+        elif self.solution_name == source.solution_name:
+            if self.solution_name != "water":
+                self.concentration = (
+                    float(source.concentration) * volume * 1e-3
+                ) / self.volume_mL
+            else:
+                pass
+
+        # case 5: other cases #TODO extend to mixtures
         else:
-            # case container is empty and source is pure
-            self.concentration = "pure"
-            self.solution_name = source.solution_name
+            if log:
+                self.container_logger.warning(f"The case of adding {source.solution_name} of {source.concentration} mM from source, to a container with {self.solution_name} of {self.concentration} mM is not captured. Leads to wrong updated attributes in containers")
+            else:
+                pass
+
         if log:
             self.container_logger.info(
                 f"Container: dispensed {volume} uL into this container from source {source.WELL_ID} containing {source.concentration} mM {source.solution_name}."
             )
-
 
     def __str__(self):
         return f"""

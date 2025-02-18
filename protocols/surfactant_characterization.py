@@ -13,7 +13,7 @@ def prototcol_surfactant_characterization(pendant_drop_camera: PendantDropCamera
     characterization_info = pd.read_csv(file_name)
     surfactants = characterization_info["surfactant"]
     row_ids = characterization_info["row id"]
-    explore_points = int(settings['EXPLORE_POINTS'])
+    explore_points = int(settings["EXPLORE_POINTS"])
 
     # initialize
     api = Opentrons_http_api()
@@ -32,12 +32,17 @@ def prototcol_surfactant_characterization(pendant_drop_camera: PendantDropCamera
 
     for i, surfactant in enumerate(surfactants):
         row_id = row_ids[i]
-        right_pipette.serial_dilution(row_id=row_id, surfactant_name=surfactant)
-        for i in range(explore_points): 
-            st_t = left_pipette.measure_pendant_drop(
-                source=containers[f"{row_id}{i+1}"],
-                drop_volume=float(settings["DROP_VOLUME"]),
-                delay=float(settings["EQUILIBRATION_TIME"]),
-                flow_rate=float(settings["FLOW_RATE"]),
-                pendant_drop_camera=pd_cam
-            )
+        right_pipette.serial_dilution(
+            row_id=row_id,
+            surfactant_name=surfactant,
+            n_dilutions=int(settings["EXPLORE_POINTS"]),
+            well_volume=float(settings["WELL_VOLUME"]),
+        )
+        # for i in range(explore_points):
+        #     st_t = left_pipette.measure_pendant_drop(
+        #         source=containers[f"{row_id}{i+1}"],
+        #         drop_volume=float(settings["DROP_VOLUME"]),
+        #         delay=float(settings["EQUILIBRATION_TIME"]),
+        #         flow_rate=float(settings["FLOW_RATE"]),
+        #         pendant_drop_camera=pd_cam
+        #     )

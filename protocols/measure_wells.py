@@ -13,7 +13,7 @@ def prototcol_measure_wells(pendant_drop_camera: PendantDropCamera):
     file_name = f"experiments/{settings['EXPERIMENT_NAME']}/meta_data/{settings['WELL_INFO_FILENAME']}"
     well_info = pd.read_csv(file_name)
     results = well_info.copy()
-    results["well id"] = well_info["location"].astype(str) + well_info["well"]
+    results["well id"] = well_info["location"].astype(str) + well_info["well"].astype(str)
     well_ids = results["well id"]
     drop_volumes = results["drop volume (uL)"]
 

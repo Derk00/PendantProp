@@ -182,7 +182,7 @@ def characterize():
         csv_file=csv_file,
         app=app,
     )
-    prototcol_surfactant_characterization()
+    prototcol_surfactant_characterization(pendant_drop_camera=pendant_drop_camera)
     session["last_action"] = "Surfactant characterized"
     return redirect(url_for("index"))
 

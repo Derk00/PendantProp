@@ -54,8 +54,7 @@ class Pipette:
         self.last_source = None
         self.last_destination = None
         self.air_gap_volume = 0
-        self.WELL_ID_TRASH = get_well_id(containers=self.CONTAINERS, solution="trash") # well ID liquid waste
-        self.WELL_ID_WATER = get_well_id(containers=self.CONTAINERS, solution="water") # well ID water stock
+
 
     def pick_up_tip(self, well=None):
         if self.has_tip:
@@ -493,27 +492,27 @@ class Pipette:
         else:
             return pendant_drop_camera.st_t
 
-    def serial_dilution(self, row_id: str, surfactant_name: str):
-        # initialising variables
-        settings = load_settings()
-        explore_points = int(settings["EXPLORE_POINTS"])
-        well_volume = float(settings["WELL_VOLUME"])
-        containers = self.CONTAINERS
-        well_id_surfactant = get_well_id(containers, solution=surfactant_name)
+    def serial_dilution(self, row_id: str, surfactant_name: str, n_dilutions: int, well_volume: float):
+        # find relevant well id's
+        well_id_trash = get_well_id(containers=self.CONTAINERS, solution="trash") # well ID liquid waste
+        well_id_water = get_well_id(containers=self.CONTAINERS, solution="water") # well ID water stock
+        well_id_surfactant = get_well_id(containers=self.CONTAINERS, solution=surfactant_name)
 
+        # log start of serial dilution
         self.protocol_logger.info(
-            f"Start of serial dilution of {surfactant_name} in row {row_id}, with {explore_points} explore points."
+            f"Start of serial dilution of {surfactant_name} in row {row_id}, with {n_dilutions} dilutions."
         )
 
+        # pick up tip if pipette has no tip
         if self.has_tip == False:
             self.pick_up_tip()
 
         # adding water to all wells
-        for i in range(explore_points):
+        for i in range(n_dilutions):
             self.transfer(
                 volume=well_volume,
-                source=containers[self.WELL_ID_WATER],
-                destination=containers[f"{row_id}{i+1}"],
+                source=self.CONTAINERS[well_id_water],
+                destination=self.CONTAINERS[f"{row_id}{i+1}"],
                 touch_tip=True,
             )
         self.drop_tip()
@@ -521,23 +520,23 @@ class Pipette:
         # adding surfactant to the first well
         self.pick_up_tip()
         self.aspirate(
-            volume=well_volume, source=containers[well_id_surfactant], touch_tip=True
+            volume=well_volume, source=self.CONTAINERS[well_id_surfactant], touch_tip=True
         )
         self.dispense(
             volume=well_volume,
-            destination=containers[f"{row_id}1"],
+            destination=self.CONTAINERS[f"{row_id}1"],
             touch_tip=True,
             mix=("after", well_volume / 2, 5),
         )
 
         # serial dilution of surfactant
-        for i in range(1, explore_points):
+        for i in range(1, n_dilutions):
             self.aspirate(
-                volume=well_volume, source=containers[f"{row_id}{i}"], touch_tip=True
+                volume=well_volume, source=self.CONTAINERS[f"{row_id}{i}"], touch_tip=True
             )
             self.dispense(
                 volume=well_volume,
-                destination=containers[f"{row_id}{i+1}"],
+                destination=self.CONTAINERS[f"{row_id}{i+1}"],
                 touch_tip=True,
                 mix=("after", well_volume / 2, 5),
             )
@@ -545,14 +544,15 @@ class Pipette:
         # transfering half of the volume of the last well to trash to ensure equal volume in all wells
         self.aspirate(
             volume=well_volume,
-            source=containers[f"{row_id}{explore_points}"],
+            source=self.CONTAINERS[f"{row_id}{n_dilutions}"],
             touch_tip=True,
         )
         self.dispense(
-            volume=well_volume, destination=containers[self.WELL_ID_TRASH], touch_tip=True
+            volume=well_volume, destination=self.CONTAINERS[well_id_trash], touch_tip=True, update_info=False
         )
-
         self.drop_tip()
+
+        # log end of serial dilution
         self.protocol_logger.info("End of serial dilution.")
 
     def __str__(self):

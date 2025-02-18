@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 
 from hardware.opentrons.http_communications import Opentrons_http_api
 from hardware.opentrons.configuration import Configuration
@@ -8,6 +9,7 @@ from utils.load_save_functions import load_settings
 
 
 def prototcol_surfactant_characterization(pendant_drop_camera: PendantDropCamera):
+    n_measurement_in_eq = 100
     settings = load_settings()
     file_name = f"experiments/{settings['EXPERIMENT_NAME']}/meta_data/{settings['CHARACTERIZATION_INFO_FILENAME']}"
     characterization_info = pd.read_csv(file_name)
@@ -34,15 +36,18 @@ def prototcol_surfactant_characterization(pendant_drop_camera: PendantDropCamera
         row_id = row_ids[i]
         right_pipette.serial_dilution(
             row_id=row_id,
-            surfactant_name=surfactant,
-            n_dilutions=int(settings["EXPLORE_POINTS"]),
+            solution_name=surfactant,
+            n_dilutions=explore_points,
             well_volume=float(settings["WELL_VOLUME"]),
         )
-        # for i in range(explore_points):
-        #     st_t = left_pipette.measure_pendant_drop(
-        #         source=containers[f"{row_id}{i+1}"],
-        #         drop_volume=float(settings["DROP_VOLUME"]),
-        #         delay=float(settings["EQUILIBRATION_TIME"]),
-        #         flow_rate=float(settings["FLOW_RATE"]),
-        #         pendant_drop_camera=pd_cam
-        #     )
+        for i in range(explore_points):
+            well_id = f"{row_id}{i+1}"
+            container = containers[well_id]
+            print(container.concentration)
+            # st_t = left_pipette.measure_pendant_drop(
+            #     source=containers[well_id],
+            #     drop_volume=float(settings["DROP_VOLUME"]),
+            #     delay=float(settings["EQUILIBRATION_TIME"]),
+            #     flow_rate=float(settings["FLOW_RATE"]),
+            #     pendant_drop_camera=pd_cam
+            # )

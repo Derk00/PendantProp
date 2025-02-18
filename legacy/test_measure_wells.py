@@ -1,5 +1,5 @@
 from hardware.cameras import PendantDropCamera
-from protocols.measure_wells import prototcol_measure_wells
+from protocols.protocol import prototcol_measure_wells
 
 #TODO fix container loading
 

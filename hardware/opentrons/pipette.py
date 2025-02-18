@@ -325,8 +325,8 @@ class Pipette:
     def mixing(self, container: Container, mix: any):
         mix_order, volume_mix, repeat_mix = mix
         for n in range(repeat_mix):
-            self.aspirate(volume=volume_mix, source=container, log=False)
-            self.dispense(volume=volume_mix, destination=container, log=False)
+            self.aspirate(volume=volume_mix, source=container, log=False, update_info=False)
+            self.dispense(volume=volume_mix, destination=container, log=False, update_info=False)
         self.protocol_logger.info(
             f"done with mixing in {container.WELL_ID} with order {mix_order}, with volume {volume_mix} uL, repeated {repeat_mix} times"
         )
@@ -492,15 +492,15 @@ class Pipette:
         else:
             return pendant_drop_camera.st_t
 
-    def serial_dilution(self, row_id: str, surfactant_name: str, n_dilutions: int, well_volume: float):
+    def serial_dilution(self, row_id: str, solution_name: str, n_dilutions: int, well_volume: float):
         # find relevant well id's
         well_id_trash = get_well_id(containers=self.CONTAINERS, solution="trash") # well ID liquid waste
         well_id_water = get_well_id(containers=self.CONTAINERS, solution="water") # well ID water stock
-        well_id_surfactant = get_well_id(containers=self.CONTAINERS, solution=surfactant_name)
+        well_id_solution = get_well_id(containers=self.CONTAINERS, solution=solution_name)
 
         # log start of serial dilution
         self.protocol_logger.info(
-            f"Start of serial dilution of {surfactant_name} in row {row_id}, with {n_dilutions} dilutions."
+            f"Start of serial dilution of {solution_name} in row {row_id}, with {n_dilutions} dilutions."
         )
 
         # pick up tip if pipette has no tip
@@ -520,7 +520,7 @@ class Pipette:
         # adding surfactant to the first well
         self.pick_up_tip()
         self.aspirate(
-            volume=well_volume, source=self.CONTAINERS[well_id_surfactant], touch_tip=True
+            volume=well_volume, source=self.CONTAINERS[well_id_solution], touch_tip=True
         )
         self.dispense(
             volume=well_volume,

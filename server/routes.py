@@ -22,7 +22,7 @@ from hardware.cameras import OpentronCamera, PendantDropCamera
 from protocols.calibration import prototcol_calibrate
 from protocols.surfactant_characterization import prototcol_surfactant_characterization
 from protocols.formulation import prototcol_formulate
-from protocols.measure_wells import prototcol_measure_wells
+from protocols.protocol import Protocol
 
 # initialize the Flask app
 app = Flask(__name__)

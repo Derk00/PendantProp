@@ -10,7 +10,7 @@ from utils.load_save_functions import load_settings
 from utils.logger import Logger
 
 
-class Opentrons_http_api:
+class OpentronsAPI:
     def __init__(self):
         settings = load_settings()
         self.ROBOT_IP_ADDRESS = settings["ROBOT_IP"]

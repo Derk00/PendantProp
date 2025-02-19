@@ -2,14 +2,14 @@ from utils.logger import Logger
 from utils.load_save_functions import load_settings
 from utils.search_containers import get_well_id
 from hardware.opentrons.containers import *
-from hardware.opentrons.http_communications import Opentrons_http_api
+from hardware.opentrons.http_communications import OpentronsAPI
 from hardware.cameras import PendantDropCamera
 
 
 class Pipette:
     def __init__(
         self,
-        http_api: Opentrons_http_api,
+        http_api: OpentronsAPI,
         mount: str,
         pipette_name: str,
         pipette_id: str,
@@ -188,12 +188,13 @@ class Pipette:
                 f"{self.MOUNT} pipette ({self.PIPETTE_NAME}) does not have a tip! Cancelled dispensing step."
             )
             return
-
-        if self.volume - volume < 0:
-            self.protocol_logger.error(
-                f"{self.MOUNT} pipette ({self.PIPETTE_NAME}) does not have enough volume to dispense {volume} uL! Cancelled dispensing step."
-            )
-            return
+        
+        #TODO this gives a weird error with mixing
+        # if self.volume - volume < 0:
+        #     self.protocol_logger.error(
+        #         f"{self.MOUNT} pipette ({self.PIPETTE_NAME}) does not have enough volume to dispense {volume} uL! Cancelled dispensing step."
+        #     )
+        #     return
 
         if mix:
             mix_order = mix[0]
@@ -460,7 +461,7 @@ class Pipette:
         if self.has_tip == False:
             self.pick_up_tip()
 
-        self.aspirate(volume=15, source=source, flow_rate=flow_rate, mix=("before", 15, 5))
+        self.aspirate(volume=15, source=source, flow_rate=flow_rate, mix=("before", 14, 5))
         self.air_gap(air_volume=5)
         self.clean_tip()
         self.remove_air_gap(at_drop_stage=True)

@@ -2,7 +2,7 @@ import os
 import pandas as pd
 
 
-class SensorApi:
+class SensorAPI:
     def __init__(self):
         self.sensor_name = "test"  # TODO look up sensor name
 
@@ -28,8 +28,3 @@ class SensorApi:
 
         return last_sensor_data
 
-
-if __name__ == "__main__":
-    api = SensorApi()
-    sensor_data = api.capture_sensor_data()
-    print(sensor_data)

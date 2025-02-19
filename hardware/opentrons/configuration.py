@@ -4,14 +4,14 @@ from hardware.opentrons.containers import *
 from hardware.opentrons.pipette import Pipette
 from utils.load_save_functions import load_settings, save_instances_to_csv
 from utils.logger import Logger
-from hardware.opentrons.http_communications import Opentrons_http_api
+from hardware.opentrons.http_communications import OpentronsAPI
 
 # TODO no difference between source and destination?
 
 
 class Configuration:
 
-    def __init__(self, http_api: Opentrons_http_api):
+    def __init__(self, http_api: OpentronsAPI):
         settings = load_settings()
         self.settings = settings
         self.api = http_api

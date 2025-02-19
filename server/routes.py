@@ -9,6 +9,7 @@ from flask import (
     session,
     Response,
     jsonify,
+    copy_current_request_context,
 )
 
 from utils.load_save_functions import (
@@ -16,21 +17,26 @@ from utils.load_save_functions import (
     load_settings,
     save_settings,
     save_settings_meta_data,
-    load_commit_hash
+    load_commit_hash,
 )
 from hardware.cameras import OpentronCamera, PendantDropCamera
-from protocols.calibration import prototcol_calibrate
-from protocols.surfactant_characterization import prototcol_surfactant_characterization
-from protocols.formulation import prototcol_formulate
-from protocols.protocol import Protocol
+from hardware.opentrons.http_communications import OpentronsAPI
+from hardware.sensor.sensor_api import SensorAPI
+from protocol import Protocol
 
 # initialize the Flask app
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "default_secret_key")
 app.config["UPLOAD_FOLDER"] = "experiments"
 
-# initialize pendant drop camera
+# initialize api's
+opentrons_api = OpentronsAPI()
+sensor_api = SensorAPI()
 pendant_drop_camera = PendantDropCamera()
+opentron_camera = OpentronCamera()
+
+# Global variable to store the protocol instance
+protocol = None
 
 
 @app.route("/")
@@ -85,20 +91,37 @@ def input_initialisation():
     return render_template("input_initialisation.html")
 
 
+def initialize_protocol():
+    global protocol
+    protocol = Protocol(
+        opentrons_api=opentrons_api,
+        sensor_api=sensor_api,
+        pendant_drop_camera=pendant_drop_camera,
+    )
+
+
 @app.route("/initialisation", methods=["POST"])
 def initialisation():
     exp_name = request.form.get("exp_name")
+    csv_file = request.files.get("csv_file")
+
     settings = load_settings()
     settings["EXPERIMENT_NAME"] = exp_name
     settings["GIT_COMMIT_HASH"] = load_commit_hash()
-    csv_file = request.files.get("csv_file")
     settings["CONFIG_FILENAME"] = csv_file.filename
     sub_dir = "meta_data"
-    # save data
+
+    # save settings and layout file
     save_csv_file(exp_name, sub_dir, csv_file, app)
     save_settings_meta_data(settings=settings)
     save_settings(settings)
-    session["last_action"] = "Initialisation done"
+
+    # start the initialization of protocol in a separate thread
+    thread = threading.Thread(target=initialize_protocol)
+    thread.daemon = True
+    thread.start()
+
+    session["last_action"] = "Initialisation"
     return redirect(url_for("index"))
 
 
@@ -109,12 +132,10 @@ def input_calibration():
 
 @app.route("/calibrate", methods=["POST"])
 def calibrate():
-    thread = threading.Thread(
-        target=prototcol_calibrate, args=(pendant_drop_camera,)
-    )
+    thread = threading.Thread(target=protocol.calibrate(), args=(pendant_drop_camera,))
     thread.daemon = True
     thread.start()
-    session["last_action"] = "Calibration done"
+    session["last_action"] = "Calibration"
     return redirect(url_for("index"))
 
 
@@ -132,7 +153,6 @@ def formulate():
         csv_file=request.files.get("csv_file"),
         app=app,
     )
-    prototcol_formulate()
     session["last_action"] = "Formulation done"
     return redirect(url_for("index"))
 
@@ -155,9 +175,7 @@ def measure_wells():
         csv_file=csv_file,
         app=app,
     )
-    thread = threading.Thread(
-        target=prototcol_measure_wells, args=(pendant_drop_camera,)
-    )
+    thread = threading.Thread(target=protocol.measure_wells())
     thread.daemon = True
     thread.start()
     session["last_action"] = "Measuring wells"
@@ -182,17 +200,16 @@ def characterize():
         csv_file=csv_file,
         app=app,
     )
-    prototcol_surfactant_characterization(pendant_drop_camera=pendant_drop_camera)
-    session["last_action"] = "Surfactant characterized"
+    thread = threading.Thread(target=protocol.characterize_surfactant())
+    thread.daemon = True
+    thread.start()
+    session["last_action"] = "Surfactant characterization"
     return redirect(url_for("index"))
 
 
 @app.route("/about")
 def about():
     return render_template("about.html")
-
-
-opentron_camera = OpentronCamera()
 
 
 @app.route("/opentron_video_feed")
@@ -211,7 +228,7 @@ def pendant_drop_video_feed():
     )
 
 
-@app.route("/toggle_pendant_drop_camera", methods = ["POST"])
+@app.route("/toggle_pendant_drop_camera", methods=["POST"])
 def toggle_pendant_drop_camera():
     if pendant_drop_camera.streaming:
         pendant_drop_camera.stop_stream()
@@ -220,15 +237,16 @@ def toggle_pendant_drop_camera():
         pendant_drop_camera.start_stream()
         session["last_action"] = "toggle on pendant drop camera"
 
-    return redirect(url_for('index'))
+    return redirect(url_for("index"))
 
 
 @app.route("/status", methods=["POST"])
 def status():
     data = request.get_json()
     status = data.get("status")
-    print(f"Status: {status}")  
+    print(f"Status: {status}")
     return jsonify({"status": status})
+
 
 @app.route("/pendant_drop_plot_feed")
 def pendant_drop_plot_feed():

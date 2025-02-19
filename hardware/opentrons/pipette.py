@@ -461,7 +461,7 @@ class Pipette:
         if self.has_tip == False:
             self.pick_up_tip()
 
-        self.aspirate(volume=15, source=source, flow_rate=flow_rate, mix=("before", 14, 5))
+        self.aspirate(volume=15, source=source, flow_rate=flow_rate, mix=("before", 15, 5))
         self.air_gap(air_volume=5)
         self.clean_tip()
         self.remove_air_gap(at_drop_stage=True)

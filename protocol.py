@@ -1,6 +1,15 @@
 import pandas as pd
 import numpy as np
+import warnings
 
+# Suppress the specific FutureWarning of Pandas
+warnings.filterwarnings(
+    "ignore",
+    category=FutureWarning,
+    message="The behavior of DataFrame concatenation with empty or all-NA entries is deprecated",
+)
+
+from utils.logger import Logger
 from hardware.opentrons.http_communications import OpentronsAPI
 from hardware.opentrons.configuration import Configuration
 from hardware.cameras import PendantDropCamera
@@ -9,11 +18,16 @@ from utils.load_save_functions import load_settings
 
 class Protocol:
     def __init__(self, opentrons_api: OpentronsAPI, sensor_api: SensorAPI, pendant_drop_camera: PendantDropCamera):
+        self.settings = load_settings()
+        self.logger = Logger(
+            name="protocol",
+            file_path=f'experiments/{self.settings["EXPERIMENT_NAME"]}/meta_data',
+        )
+        self.logger.info("Initialization starting...")
         self.opentrons_api = opentrons_api
         self.opentrons_api.initialise()
         self.sensor_api = sensor_api
         self.pendant_drop_camera = pendant_drop_camera
-        self.settings = load_settings()
         self.config = Configuration(http_api=opentrons_api)
         self.labware = self.config.load_labware()
         self.containers = self.config.load_containers()
@@ -22,10 +36,12 @@ class Protocol:
         self.left_pipette = pipettes["left"]
         self.n_measurement_in_eq = 100 # number of data points which is averaged for equillibrium surface tension
         self.results = self._initialize_results()
+
         self.opentrons_api.home()
-        print("initialization protocol")
+        self.logger.info("Initialization finished.")
 
     def calibrate(self):
+        self.logger.info("Starting calibration...")
         scale_t = self.left_pipette.measure_pendant_drop(
             source=self.containers["8A1"],
             drop_volume=13,
@@ -36,9 +52,11 @@ class Protocol:
         )
         self._save_calibration_data(scale_t)
         average_scale = self._calculate_average_scale(scale_t)
-        self._log_average_scale(average_scale=average_scale)
+        self.logger.info(f"finished calibration, average scale is: {average_scale}")
 
     def measure_wells(self):
+        self.logger.info("starting measure wells protocol...")
+        self._update_settings()
         well_info = self._load_info(file_name=f"experiments/{self.settings['EXPERIMENT_NAME']}/meta_data/{self.settings['WELL_INFO_FILENAME']}")
         wells_ids = well_info["location"].astype(str) + well_info["well"].astype(str)
         for i, well_id in enumerate(wells_ids):
@@ -50,10 +68,11 @@ class Protocol:
                 pendant_drop_camera=self.pendant_drop_camera
             )
             self._save_results(dynamic_surface_tension, well_id)
-
         self._save_final_results()
+        self.logger.info("Finished measure wells protocol. ")
 
     def characterize_surfactant(self):
+        self._update_settings()
         characterization_info = self._load_info(
             file_name=f"experiments/{self.settings['EXPERIMENT_NAME']}/meta_data/{self.settings['CHARACTERIZATION_INFO_FILENAME']}"
         )
@@ -78,9 +97,8 @@ class Protocol:
                     flow_rate=float(self.settings["FLOW_RATE"]),
                     pendant_drop_camera=self.pendant_drop_camera
                 )
-
-    def _log_average_scale(self, average_scale):
-        print(f"average scale: {average_scale}")
+    def _update_settings(self):
+        self.settings = load_settings()
 
     def _calculate_average_scale(self, scale_t):
         scale = [item[1] for item in scale_t]
@@ -105,7 +123,7 @@ class Protocol:
             )
             self._add_data_to_results(well_id=well_id, surface_tension_eq=st_eq)
         else:
-            print("was not able to measure pendant drop")
+            self.logger.warning("Was not able to measure pendant drop!")
 
     def _save_dynamic_surface_tension(self, dynamic_surface_tension, well_id):
         df = pd.DataFrame(
@@ -120,17 +138,17 @@ class Protocol:
         if len(dynamic_surface_tension) > n_measurement_in_eq:
             dynamic_surface_tension = dynamic_surface_tension[-n_measurement_in_eq:]
         else:
-            print(f"less than {n_measurement_in_eq} data points measured!")
+            self.logger.info(f"less than {n_measurement_in_eq} data points measured!")
         return np.mean([x[1] for x in dynamic_surface_tension])
 
     def _add_data_to_results(self, well_id, surface_tension_eq):
         sensor_data = self.sensor_api.capture_sensor_data()
         new_row = pd.DataFrame({
-            "well id": well_id,
-            "surface tension eq. (mN/m)": surface_tension_eq,
-            "Temperature (C)": float(sensor_data["Temperature (C)"]),
-            "Humidity (%)": float(sensor_data["Humidity (%)"]),
-            "Pressure (Pa)": float(sensor_data["Pressure (Pa)"]),
+            "well id": [well_id],
+            "surface tension eq. (mN/m)": [surface_tension_eq],
+            "Temperature (C)": [float(sensor_data["Temperature (C)"])],
+            "Humidity (%)": [float(sensor_data["Humidity (%)"])],
+            "Pressure (Pa)": [float(sensor_data["Pressure (Pa)"])],
         })
         self.results = pd.concat([self.results, new_row], ignore_index=True)
 

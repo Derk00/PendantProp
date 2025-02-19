@@ -1,4 +1,5 @@
 import os
+import time
 import threading
 from flask import (
     Flask,
@@ -91,14 +92,13 @@ def input_initialisation():
     return render_template("input_initialisation.html")
 
 
-def initialize_protocol():
+def initialize_protocol(exp_name, csv_file):
     global protocol
     protocol = Protocol(
         opentrons_api=opentrons_api,
         sensor_api=sensor_api,
         pendant_drop_camera=pendant_drop_camera,
     )
-
 
 @app.route("/initialisation", methods=["POST"])
 def initialisation():
@@ -117,7 +117,7 @@ def initialisation():
     save_settings(settings)
 
     # start the initialization of protocol in a separate thread
-    thread = threading.Thread(target=initialize_protocol)
+    thread = threading.Thread(target=initialize_protocol, args=(exp_name, csv_file))
     thread.daemon = True
     thread.start()
 

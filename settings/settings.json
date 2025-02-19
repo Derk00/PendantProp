@@ -1,20 +1,20 @@
 {
     "ROBOT_IP": "169.254.220.146",
     "ROBOT_TYPE": "OT2",
-    "EXPERIMENT_NAME": "testtest",
-    "DROP_VOLUME": "10",
+    "EXPERIMENT_NAME": "testestes",
+    "DROP_VOLUME": "13",
     "EQUILIBRATION_TIME": "30",
     "FLOW_RATE": "2",
     "DENSITY": "0.99776",
-    "SCALE": "0.002621118714249117",
+    "SCALE": "0.002621022419116357",
     "DILUTION_FACTOR": "2",
     "EXPLORE_POINTS": "2",
     "EXPLOIT_POINTS": "4",
     "WELL_VOLUME": "100",
     "DYNAMIC_EQUILIBRATION_TIME": "True",
-    "CONFIG_FILENAME": "layout_characterization.csv",
+    "CONFIG_FILENAME": "layout_measure_wells.csv",
     "UPLOAD_FOLDER": "/var/lib/jupyter/notebooks",
-    "WELL_INFO_FILENAME": "well_info_AULAB_PSP0065.csv",
+    "WELL_INFO_FILENAME": "well_info.csv",
     "CHARACTERIZATION_INFO_FILENAME": "characterization_info.csv",
-    "GIT_COMMIT_HASH": "c3e48e94f15f7f3a3a206b016c42152676f1e0a7"
+    "GIT_COMMIT_HASH": "281a93360109ebf642892dd4661a27bfaa691bea"
 }

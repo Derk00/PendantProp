@@ -19,10 +19,6 @@ class OpentronsAPI:
         self.PROTOCOL_ID = None
         self.RUN_ID = None
         self.COMMANDS_URL = None
-        self.logger = Logger(
-            name="protocol",
-            file_path=f'experiments/{settings["EXPERIMENT_NAME"]}/meta_data',
-        )
         self.X_OFFSET = 0
         self.Y_OFFSET = 0
 
@@ -423,9 +419,16 @@ class OpentronsAPI:
             params={"waitUntilComplete": True},
         )
 
-    ####### initialise an standard api #######
+    ####### utils #######
+    def _initialize_logger(self):
+        settings = load_settings()
+        self.logger = Logger(
+            name="protocol",
+            file_path=f'experiments/{settings["EXPERIMENT_NAME"]}/meta_data',
+        )
 
     def initialise(self):
+        self._initialize_logger()
         self.upload_protocol(protocol="hardware\opentrons\protocol_placeholder.py")
         self.create_run()
         self.add_all_labware_definitions()

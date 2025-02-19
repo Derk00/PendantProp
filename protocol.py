@@ -60,14 +60,19 @@ class Protocol:
         well_info = self._load_info(file_name=f"experiments/{self.settings['EXPERIMENT_NAME']}/meta_data/{self.settings['WELL_INFO_FILENAME']}")
         wells_ids = well_info["location"].astype(str) + well_info["well"].astype(str)
         for i, well_id in enumerate(wells_ids):
+            drop_parameters = {
+                    "drop_volume": float(well_info["drop volume (uL)"][i]),
+                    "measure_time": float(self.settings["EQUILIBRATION_TIME"]),
+                    "flow_rate": float(self.settings["FLOW_RATE"])
+                }
             dynamic_surface_tension = self.left_pipette.measure_pendant_drop(
                 source=self.containers[well_id],
-                drop_volume=float(well_info["drop volume (uL)"][i]),
-                delay=float(self.settings["EQUILIBRATION_TIME"]),
-                flow_rate=float(self.settings["FLOW_RATE"]),
+                drop_volume= drop_parameters["drop_volume"],
+                delay= drop_parameters["measure_time"],
+                flow_rate= drop_parameters["flow_rate"],
                 pendant_drop_camera=self.pendant_drop_camera
             )
-            self._save_results(dynamic_surface_tension, well_id)
+            self._save_results(dynamic_surface_tension, well_id, drop_parameters)
         self._save_final_results()
         self.logger.info("Finished measure wells protocol. ")
 
@@ -81,22 +86,28 @@ class Protocol:
 
         for i, surfactant in enumerate(characterization_info["surfactant"]):
             row_id = characterization_info["row id"][i]
-            self.right_pipette.serial_dilution(
-                row_id=row_id,
-                solution_name=surfactant,
-                n_dilutions=explore_points,
-                well_volume=float(self.settings["WELL_VOLUME"])
-            )
+            # self.right_pipette.serial_dilution(
+            #     row_id=row_id,
+            #     solution_name=surfactant,
+            #     n_dilutions=explore_points,
+            #     well_volume=float(self.settings["WELL_VOLUME"])
+            # )
             for i in range(explore_points):
                 well_id = f"{row_id}{i+1}"
-                container = self.containers[well_id]
+                drop_parameters = {
+                    "drop_volume": float(self.settings["DROP_VOLUME"]),
+                    "measure_time": float(self.settings["EQUILIBRATION_TIME"]),
+                    "flow_rate": float(self.settings["FLOW_RATE"])
+                }
                 dynamic_surface_tension = self.left_pipette.measure_pendant_drop(
                     source=self.containers[well_id],
-                    drop_volume=float(self.settings["DROP_VOLUME"]),
-                    delay=float(self.settings["EQUILIBRATION_TIME"]),
-                    flow_rate=float(self.settings["FLOW_RATE"]),
+                    drop_volume=drop_parameters["drop_volume"],
+                    delay= drop_parameters["measure_time"],
+                    flow_rate= drop_parameters["flow_rate"],
                     pendant_drop_camera=self.pendant_drop_camera
                 )
+                self._save_results(dynamic_surface_tension, well_id, drop_parameters)
+
     def _update_settings(self):
         self.settings = load_settings()
 
@@ -109,19 +120,32 @@ class Protocol:
 
     def _initialize_results(self):
         # Initialize an empty DataFrame with the required columns
-        return pd.DataFrame(columns=["well id", "surface tension eq. (mN/m)", "Temperature (C)", "Humidity (%)", "Pressure (Pa)"])
+        return pd.DataFrame(
+            columns=[
+                "well id",
+                "solution",
+                "concentration",
+                "drop volume (uL)",
+                "measure time (s)",
+                "flow rate (uL/s)",
+                "surface tension eq. (mN/m)",
+                "temperature (C)",
+                "humidity (%)",
+                "pressure (Pa)",
+            ]
+        )
 
     def _save_calibration_data(self, scale_t):
         df = pd.DataFrame(scale_t, columns=["time (s)", "scale"])
         df.to_csv(f"experiments/{self.settings['EXPERIMENT_NAME']}/data/calibration.csv")
 
-    def _save_results(self, dynamic_surface_tension, well_id):
+    def _save_results(self, dynamic_surface_tension: list, well_id: str, drop_parameters: dict):
         if dynamic_surface_tension:
             self._save_dynamic_surface_tension(dynamic_surface_tension, well_id)
             st_eq = self._calculate_equilibrium_surface_tension(
                 dynamic_surface_tension
             )
-            self._add_data_to_results(well_id=well_id, surface_tension_eq=st_eq)
+            self._add_data_to_results(well_id=well_id, surface_tension_eq=st_eq, drop_parameters=drop_parameters)
         else:
             self.logger.warning("Was not able to measure pendant drop!")
 
@@ -141,14 +165,20 @@ class Protocol:
             self.logger.info(f"less than {n_measurement_in_eq} data points measured!")
         return np.mean([x[1] for x in dynamic_surface_tension])
 
-    def _add_data_to_results(self, well_id, surface_tension_eq):
+    def _add_data_to_results(self, well_id: str, surface_tension_eq: float, drop_parameters: dict):
         sensor_data = self.sensor_api.capture_sensor_data()
+        container = self.containers[well_id]
         new_row = pd.DataFrame({
             "well id": [well_id],
+            "solution": [container.solution_name],
+            "concentration": [container.concentration],
             "surface tension eq. (mN/m)": [surface_tension_eq],
-            "Temperature (C)": [float(sensor_data["Temperature (C)"])],
-            "Humidity (%)": [float(sensor_data["Humidity (%)"])],
-            "Pressure (Pa)": [float(sensor_data["Pressure (Pa)"])],
+            "drop volume (uL)": [drop_parameters["drop_volume"]],
+            "measure time (s)": [drop_parameters["measure_time"]],
+            "flow rate (uL/s)": [drop_parameters["flow_rate"]],
+            "temperature (C)": [float(sensor_data["Temperature (C)"])],
+            "humidity (%)": [float(sensor_data["Humidity (%)"])],
+            "pressure (Pa)": [float(sensor_data["Pressure (Pa)"])],
         })
         self.results = pd.concat([self.results, new_row], ignore_index=True)
 

@@ -92,7 +92,7 @@ def input_initialisation():
     return render_template("input_initialisation.html")
 
 
-def initialize_protocol(exp_name, csv_file):
+def initialize_protocol():
     global protocol
     protocol = Protocol(
         opentrons_api=opentrons_api,
@@ -117,7 +117,7 @@ def initialisation():
     save_settings(settings)
 
     # start the initialization of protocol in a separate thread
-    thread = threading.Thread(target=initialize_protocol, args=(exp_name, csv_file))
+    thread = threading.Thread(target=initialize_protocol)
     thread.daemon = True
     thread.start()
 
@@ -132,28 +132,14 @@ def input_calibration():
 
 @app.route("/calibrate", methods=["POST"])
 def calibrate():
-    thread = threading.Thread(target=protocol.calibrate(), args=(pendant_drop_camera,))
+    global protocol
+    if protocol is None:
+        session["last_action"] = "Protocol not initialized"
+        return redirect(url_for("index"))
+    thread = threading.Thread(target=protocol.calibrate)
     thread.daemon = True
     thread.start()
     session["last_action"] = "Calibration"
-    return redirect(url_for("index"))
-
-
-@app.route("/input_formulate", methods=["POST"])
-def input_formulate():
-    return render_template("input_formulate.html")
-
-
-@app.route("/formulate", methods=["POST"])
-def formulate():
-    settings = load_settings()
-    save_csv_file(
-        exp_name=settings["EXPERIMENT_NAME"],
-        subdir_name="meta_data",
-        csv_file=request.files.get("csv_file"),
-        app=app,
-    )
-    session["last_action"] = "Formulation done"
     return redirect(url_for("index"))
 
 
@@ -164,6 +150,11 @@ def input_measure_wells():
 
 @app.route("/measure_wells", methods=["POST"])
 def measure_wells():
+    global protocol
+    if protocol is None:
+        session["last_action"] = "Protocol not initialized"
+        return redirect(url_for("index"))
+    
     settings = load_settings()
     csv_file = request.files.get("csv_file")
     settings["WELL_INFO_FILENAME"] = csv_file.filename
@@ -175,7 +166,7 @@ def measure_wells():
         csv_file=csv_file,
         app=app,
     )
-    thread = threading.Thread(target=protocol.measure_wells())
+    thread = threading.Thread(target=protocol.measure_wells)
     thread.daemon = True
     thread.start()
     session["last_action"] = "Measuring wells"
@@ -189,6 +180,10 @@ def input_surfactant_characterization():
 
 @app.route("/characterize", methods=["POST"])
 def characterize():
+    global protocol
+    if protocol is None:
+        session["last_action"] = "Protocol not initialized"
+        return redirect(url_for("index"))
     settings = load_settings()
     csv_file = request.files.get("csv_file")
     settings["CHARACTERIZATION_INFO_FILENAME"] = csv_file.filename
@@ -200,9 +195,9 @@ def characterize():
         csv_file=csv_file,
         app=app,
     )
-    thread = threading.Thread(target=protocol.characterize_surfactant())
-    thread.daemon = True
-    thread.start()
+    # thread = threading.Thread(target=protocol.characterize_surfactant)
+    # thread.daemon = True
+    # thread.start()
     session["last_action"] = "Surfactant characterization"
     return redirect(url_for("index"))
 
@@ -246,7 +241,6 @@ def status():
     status = data.get("status")
     print(f"Status: {status}")
     return jsonify({"status": status})
-
 
 @app.route("/pendant_drop_plot_feed")
 def pendant_drop_plot_feed():

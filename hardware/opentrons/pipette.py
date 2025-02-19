@@ -153,7 +153,8 @@ class Pipette:
 
         if touch_tip:
             self.touch_tip(container=source)
-
+        
+        self.last_source = source
         # update information:
         if update_info:
             source.aspirate(volume, log=log)
@@ -164,7 +165,7 @@ class Pipette:
                 self.clean = False
             self.current_solution = source.solution_name
             self.volume += volume
-            self.last_source = source
+            
 
         if log:
             self.protocol_logger.info(
@@ -220,9 +221,9 @@ class Pipette:
         if touch_tip:
             self.touch_tip(container=destination)
 
+        self.last_destination = destination
         if update_info:
             self.volume -= volume
-            self.last_destination = destination
             destination.dispense(volume=volume, source=self.last_source, log=log)
 
         if log:
@@ -460,8 +461,8 @@ class Pipette:
         self.protocol_logger.info(f"Start pendant drop measurement of {source.WELL_ID}, containing {source.concentration} mM {source.solution_name}")
         if self.has_tip == False:
             self.pick_up_tip()
-
-        self.aspirate(volume=15, source=source, flow_rate=flow_rate, mix=("before", 15, 5))
+        self.protocol_logger.info(f"Aspirating 15 uL from {source.WELL_ID}")
+        self.aspirate(volume=15, source=source, flow_rate=flow_rate, mix=("before", 15, 5), update_info=False, log=False)
         self.air_gap(air_volume=5)
         self.clean_tip()
         self.remove_air_gap(at_drop_stage=True)
@@ -472,7 +473,8 @@ class Pipette:
             destination=self.CONTAINERS["drop_stage"],
             depth_offset=depth_offset,
             flow_rate=flow_rate,
-            log=False
+            log=False,
+            update_info=False
         )
         pendant_drop_camera.start_capture()
         self.api.delay(seconds=delay)
@@ -482,10 +484,12 @@ class Pipette:
             volume=drop_volume,
             source=self.CONTAINERS["drop_stage"],
             depth_offset=depth_offset,
-            log=False
+            log=False,
+            update_info=False
         )  # aspirate drop in tip
         self.protocol_logger.info("Re-aspirated the pendant drop into the tip.")
-        self.dispense(volume=self.volume, destination=source)  # return liquid to source
+        self.dispense(volume=15, destination=source, update_info=False, log=False)  # return liquid to source
+        self.protocol_logger.info("Returned volume in tip to source.")
         self.drop_tip()
         self.protocol_logger.info("Done with pendant drop measurement.")
         if calibrate:

@@ -43,12 +43,14 @@ class Plotter:
             plt.xticks(rotation=45, ha="right")
             plt.tight_layout()
 
+            # save in experiment folder and plots cache for web interface
             plt.savefig(f"experiments/{self.settings['EXPERIMENT_NAME']}/results_plot.png")
+            plt.savefig("server/static/plots_cache/results_plot.png")
 
             self.logger.info("Plotter: created results plot with well IDs.")
         except Exception as e:
             self.logger.warning(f"Plotter: could not create plot results with well IDs. Error: {e}")
-    
+
     def plot_dynamic_surface_tension(self, df: pd.DataFrame, well_id: str):
         try:
             self._load_data(df)
@@ -69,10 +71,10 @@ class Plotter:
             ax.grid(axis="y")
 
             plt.savefig(f"experiments/{self.settings['EXPERIMENT_NAME']}/data/{well_id}/dynamic_surface_tension_plot.png")
+            plt.savefig("server/static/plots_cache/dynamic_surface_tension_plot.png")
             self.logger.info("Plotter: dynamic surface tension plot created.")
         except Exception as e:
             self.logger.warning(f"Plotter: could not create dynamic surface tension plot. Error: {e}")
-    
-    
+
     def plot_results_concentration(self):
         pass

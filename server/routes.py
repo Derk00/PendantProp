@@ -1,5 +1,6 @@
 import os
 import time
+import glob
 import threading
 from flask import (
     Flask,
@@ -30,6 +31,15 @@ app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "default_secret_key")
 app.config["UPLOAD_FOLDER"] = "experiments"
 
+
+# Function to delete images in the static directory #TODO in utils?
+def delete_static_images():
+    image_files = glob.glob("server/static/plots_cache/*.png")
+    for file in image_files:
+        os.remove(file)
+
+delete_static_images()
+
 # initialize api's
 opentrons_api = OpentronsAPI()
 sensor_api = SensorAPI()
@@ -42,8 +52,15 @@ protocol = None
 
 @app.route("/")
 def index():
+    file_path_results_plot = "plots_cache/results_plot.png"
+    file_path_dynamic_surface_tension = "plots_cache/dynamic_surface_tension_plot.png"
     last_action = session.get("last_action", "None")
-    return render_template("index.html", last_action=last_action)
+    return render_template(
+        "index.html",
+        last_action=last_action,
+        file_path_results_plot=file_path_results_plot,
+        file_path_dynamic_surface_tension=file_path_dynamic_surface_tension,
+    )
 
 
 @app.route("/input_settings", methods=["POST"])
@@ -100,6 +117,7 @@ def initialize_protocol():
         pendant_drop_camera=pendant_drop_camera,
     )
 
+
 @app.route("/initialisation", methods=["POST"])
 def initialisation():
     exp_name = request.form.get("exp_name")
@@ -154,7 +172,7 @@ def measure_wells():
     if protocol is None:
         session["last_action"] = "Protocol not initialized"
         return redirect(url_for("index"))
-    
+
     settings = load_settings()
     csv_file = request.files.get("csv_file")
     settings["WELL_INFO_FILENAME"] = csv_file.filename
@@ -241,6 +259,7 @@ def status():
     status = data.get("status")
     print(f"Status: {status}")
     return jsonify({"status": status})
+
 
 @app.route("/pendant_drop_plot_feed")
 def pendant_drop_plot_feed():

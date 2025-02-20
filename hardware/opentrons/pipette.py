@@ -55,7 +55,6 @@ class Pipette:
         self.last_destination = None
         self.air_gap_volume = 0
 
-
     def pick_up_tip(self, well=None):
         if self.has_tip:
             self.protocol_logger.error(
@@ -153,7 +152,7 @@ class Pipette:
 
         if touch_tip:
             self.touch_tip(container=source)
-        
+
         self.last_source = source
         # update information:
         if update_info:
@@ -165,7 +164,6 @@ class Pipette:
                 self.clean = False
             self.current_solution = source.solution_name
             self.volume += volume
-            
 
         if log:
             self.protocol_logger.info(
@@ -189,8 +187,8 @@ class Pipette:
                 f"{self.MOUNT} pipette ({self.PIPETTE_NAME}) does not have a tip! Cancelled dispensing step."
             )
             return
-        
-        #TODO this gives a weird error with mixing
+
+        # TODO this gives a weird error with mixing
         # if self.volume - volume < 0:
         #     self.protocol_logger.error(
         #         f"{self.MOUNT} pipette ({self.PIPETTE_NAME}) does not have enough volume to dispense {volume} uL! Cancelled dispensing step."
@@ -461,8 +459,8 @@ class Pipette:
         self.protocol_logger.info(f"Start pendant drop measurement of {source.WELL_ID}, containing {source.concentration} mM {source.solution_name}")
         if self.has_tip == False:
             self.pick_up_tip()
+        self.aspirate(volume=15, source=source, flow_rate=flow_rate, mix=("before", 15, 2), update_info=False, log=False) #! change later to 5 time mixing, to save time now.
         self.protocol_logger.info(f"Aspirating 15 uL from {source.WELL_ID}")
-        self.aspirate(volume=15, source=source, flow_rate=flow_rate, mix=("before", 15, 5), update_info=False, log=False)
         self.air_gap(air_volume=5)
         self.clean_tip()
         self.remove_air_gap(at_drop_stage=True)

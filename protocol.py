@@ -10,6 +10,7 @@ warnings.filterwarnings(
 )
 
 from utils.logger import Logger
+from analysis.plots import Plotter
 from hardware.opentrons.http_communications import OpentronsAPI
 from hardware.opentrons.configuration import Configuration
 from hardware.cameras import PendantDropCamera
@@ -36,7 +37,7 @@ class Protocol:
         self.left_pipette = pipettes["left"]
         self.n_measurement_in_eq = 100 # number of data points which is averaged for equillibrium surface tension
         self.results = self._initialize_results()
-
+        self.plotter = Plotter()
         self.opentrons_api.home()
         self.logger.info("Initialization finished.")
 
@@ -73,8 +74,11 @@ class Protocol:
                 pendant_drop_camera=self.pendant_drop_camera
             )
             self._save_results(dynamic_surface_tension, well_id, drop_parameters)
+            self._plot_dynamic_surface_tension(dynamic_surface_tension=dynamic_surface_tension, well_id=well_id)
+            self._plot_results_well_id()
+
         self._save_final_results()
-        self.logger.info("Finished measure wells protocol. ")
+        self.logger.info("Finished measure wells protocol.")
 
     def characterize_surfactant(self):
         self._update_settings()
@@ -107,6 +111,17 @@ class Protocol:
                     pendant_drop_camera=self.pendant_drop_camera
                 )
                 self._save_results(dynamic_surface_tension, well_id, drop_parameters)
+
+    def _plot_dynamic_surface_tension(self, dynamic_surface_tension: list, well_id: str):
+        if dynamic_surface_tension:
+            df = pd.DataFrame(
+                dynamic_surface_tension, columns=["time (s)", "surface tension (mN/m)"]
+            )
+            self.plotter.plot_dynamic_surface_tension(df=df, well_id=well_id)
+    
+    def _plot_results_well_id(self):
+        if not self.results.empty:
+            self.plotter.plot_results_well_id(df=self.results)
 
     def _update_settings(self):
         self.settings = load_settings()

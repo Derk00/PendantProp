@@ -43,7 +43,7 @@ class Protocol:
         self.plotter = Plotter()
         self.opentrons_api.home()
         self.logger.info("Initialization finished.")
-        self._play_sound("KANKER.")
+        self._play_sound("Kanker.")
 
     def calibrate(self):
         self.logger.info("Starting calibration...")

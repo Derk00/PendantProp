@@ -356,7 +356,7 @@ class Pipette:
             )
             return
         height_percentage = 0.05
-        if self.last_source.CONTAINER_TYPE == "Plate Well":
+        if self.last_source.CONTAINER_TYPE == "Plate well":
             height_percentage = 1 # needed as plate height is standard 2 mm at the moment #TODO change?
         depth_offset = height_percentage * self.last_source.DEPTH + self.last_source.height_mm
         flow_rate = air_volume / 3
@@ -460,7 +460,7 @@ class Pipette:
         self.protocol_logger.info(f"Start pendant drop measurement of {source.WELL_ID}, containing {source.concentration} mM {source.solution_name}")
         if self.has_tip == False:
             self.pick_up_tip()
-        self.mixing(container=source, mix=("before", 15, 2))
+        self.mixing(container=source, mix=("before", 15, 3))
         self.aspirate(volume=15, source=source, flow_rate=flow_rate)
         self.air_gap(air_volume=5)
         self.clean_tip()

@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import pyttsx3
 import warnings
 import winsound
 
@@ -42,7 +43,7 @@ class Protocol:
         self.plotter = Plotter()
         self.opentrons_api.home()
         self.logger.info("Initialization finished.")
-        self._play_sound()
+        self._play_sound("KANKER.")
 
     def calibrate(self):
         self.logger.info("Starting calibration...")
@@ -57,7 +58,7 @@ class Protocol:
         self._save_calibration_data(scale_t)
         average_scale = self._calculate_average_scale(scale_t)
         self.logger.info(f"Finished calibration, average scale is: {average_scale}")
-        self._play_sound()
+        self._play_sound("CALI DONE.")
 
     def measure_wells(self):
         self.logger.info("Starting measure wells protocol...")
@@ -83,7 +84,7 @@ class Protocol:
 
         self._save_final_results()
         self.logger.info("Finished measure wells protocol.")
-        self._play_sound()
+        self._play_sound("DATA DATA.")
 
     def characterize_surfactant(self):
         self.logger.info("Starting characterization protocol...")
@@ -122,10 +123,12 @@ class Protocol:
 
         self._save_final_results()
         self.logger.info("Finished characterization protocol.")
-        self._play_sound()
+        self._play_sound("DATA DATA.")
 
-    def _play_sound(self):
-        winsound.Beep(1000, 500)
+    def _play_sound(self, text: str):
+        engine = pyttsx3.init()
+        engine.say(text)
+        engine.runAndWait()
 
     def _plot_dynamic_surface_tension(self, dynamic_surface_tension: list, well_id: str):
         if dynamic_surface_tension:

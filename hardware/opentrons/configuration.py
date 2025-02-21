@@ -56,7 +56,7 @@ class Configuration:
                 mount="right",
                 pipette_name=self.RIGHT_PIPETTE_NAME,
                 pipette_id=self.RIGHT_PIPETTE_ID,
-                tips_info=self.LABWARE["tips P1000, 1"],
+                tips_info=self._find_tips_ids("tips P1000"),
                 containers=self.CONTAINERS
             )
 
@@ -68,8 +68,8 @@ class Configuration:
                 mount="left",
                 pipette_name=self.LEFT_PIPETTE_NAME,
                 pipette_id=self.LEFT_PIPETTE_ID,
-                tips_info=self.LABWARE["tips P20, 1"],
-                containers=self.CONTAINERS
+                tips_info=self._find_tips_ids("tips P20"),
+                containers=self.CONTAINERS,
             )
             self.logger.info("Pipettes loaded successfully.")
             return {"right": right_pipette, "left": left_pipette}
@@ -116,13 +116,6 @@ class Configuration:
         try:
             containers = {}
             layout = self.LAYOUT
-            # Define a mapping from labware name to container class #TODO generalize to multiple labwares
-            labware_mapping = {
-                "tube rack 15 mL": FalconTube15,
-                "glass vial rack": GlassVial,
-                "tube rack 50 mL": FalconTube50,
-                "plate": PlateWell
-            }
             for i, function in enumerate(layout["function"]):
                 labware_name = layout.loc[i, "labware name"]
                 labware_info = self.LABWARE[labware_name]
@@ -134,23 +127,24 @@ class Configuration:
 
                 if function == "drop_stage":
                     containers[labware_name] = DropStage(labware_info=labware_info)
-                
+
                 elif function == "light_holder":
                     containers[labware_name] = LightHolder(labware_info=labware_info)
-                
+
                 elif function == "sponge":
                     containers[labware_name] = Sponge(labware_info=labware_info)
 
                 elif function == "container":
-                    container_class = labware_mapping.get(labware_name)
-                    well_id = f"{location}{well}"
-                    containers[well_id] = container_class(
-                        labware_info=labware_info,
-                        well=well,
-                        initial_volume_mL=initial_volume,
-                        solution_name=name_solution,
-                        concentration=concentration,
-                    )
+                    container_class = self._find_type(labware_name=labware_name)
+                    if container_class:
+                        well_id = f"{location}{well}"
+                        containers[well_id] = container_class(
+                            labware_info=labware_info,
+                            well=well,
+                            initial_volume_mL=initial_volume,
+                            solution_name=name_solution,
+                            concentration=concentration,
+                        )
 
             self.logger.info("Containers loaded successfully.")
             self.CONTAINERS = containers
@@ -158,6 +152,21 @@ class Configuration:
 
         except Exception as e:
             self.logger.error(f"Error loading containers: {e}")
+            return None
+
+    def _find_type(self, labware_name):
+        if "tube rack 15 mL" in labware_name:
+            return FalconTube15
+        elif "glass vial rack" in labware_name:
+            return GlassVial
+        elif "tube rack 50 mL" in labware_name:
+            return FalconTube50
+        elif "plate" in labware_name:
+            return PlateWell
+        else:
+            self.logger.warning(
+                f"labware {labware_name} is container, but type is not found!"
+            )
             return None
 
     def save_containers(self, containers: list):
@@ -169,3 +178,10 @@ class Configuration:
                 containers_only.append(containers[key])
         filename = f'experiments/{self.settings["EXPERIMENT_NAME"]}/meta_data/initial_well_config.csv'
         save_instances_to_csv(instances=containers_only, filename=filename)
+
+    def _find_tips_ids(self, key_word: str):
+        tips_info = {}
+        for labware_name in self.LABWARE.keys():
+            if key_word in labware_name:
+                tips_info[labware_name] = self.LABWARE[labware_name]
+        return tips_info

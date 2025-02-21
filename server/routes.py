@@ -1,7 +1,8 @@
 import os
-import time
 import glob
 import threading
+import shutil
+import logging
 from flask import (
     Flask,
     render_template,
@@ -11,7 +12,6 @@ from flask import (
     session,
     Response,
     jsonify,
-    copy_current_request_context,
 )
 
 from utils.load_save_functions import (
@@ -31,14 +31,21 @@ app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "default_secret_key")
 app.config["UPLOAD_FOLDER"] = "experiments"
 
+log = logging.getLogger("werkzeug")
+log.setLevel(logging.ERROR)
 
-# Function to delete images in the static directory #TODO in utils?
-def delete_static_images():
+# Function to replace images in the static directory with placeholders
+def replace_static_images_with_placeholders():
     image_files = glob.glob("server/static/plots_cache/*.png")
+    placeholder_dir = "server/static/placehold_images"
     for file in image_files:
         os.remove(file)
+        placeholder_file = os.path.join(placeholder_dir, os.path.basename(file))
+        print(placeholder_file)
+        if os.path.exists(placeholder_file):
+            shutil.copy(placeholder_file, "server/static/plots_cache")
 
-delete_static_images()
+replace_static_images_with_placeholders()
 
 # initialize api's
 opentrons_api = OpentronsAPI()
@@ -48,7 +55,6 @@ opentron_camera = OpentronCamera()
 
 # Global variable to store the protocol instance
 protocol = None
-
 
 @app.route("/")
 def index():

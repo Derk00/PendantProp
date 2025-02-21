@@ -103,8 +103,10 @@ class Container:
         # case 4: container contains solution and same solution, but different concentration, is added from source
         elif self.solution_name == source.solution_name:
             if self.solution_name != "water":
+                n_source_mM = float(source.concentration) * volume * 1e-3
+                n_container_mM = float(self.concentration) * (self.volume_mL - volume * 1e-3)
                 self.concentration = (
-                    float(source.concentration) * volume * 1e-3
+                    n_source_mM + n_container_mM
                 ) / self.volume_mL
             else:
                 pass
@@ -240,7 +242,7 @@ class PlateWell(Container):
             concentration,
             inner_diameter_mm=6.96,
         )
-        self.CONTAINER_TYPE = "Plate Well"
+        self.CONTAINER_TYPE = "Plate well"
 
     def update_liquid_height(self, volume_mL):
         # self.height_mm = 1e3 * (volume_mL) / (np.pi * (self.INNER_DIAMETER_MM / 2) ** 2)

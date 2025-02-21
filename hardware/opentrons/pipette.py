@@ -22,7 +22,6 @@ class Pipette:
         self.PIPETTE_NAME = pipette_name
         self.PIPETTE_ID = pipette_id
         self.TIPS_INFO = tips_info
-        self.TIPS_ID = tips_info["labware_id"]
         self.CONTAINERS = containers
         self.has_tip = False
         self.volume = 0
@@ -33,7 +32,7 @@ class Pipette:
             file_path=f'experiments/{settings["EXPERIMENT_NAME"]}/meta_data',
         )
 
-        # warning if no tips id is provided
+        # warning if no tips information is provided
         if self.TIPS_INFO == None:
             self.protocol_logger.warning("No tips information provided for pipette!")
 
@@ -49,7 +48,6 @@ class Pipette:
         else:
             self.protocol_logger.error("Pipette name not recognised!")
 
-        self.ORDERING = tips_info["ordering"]
         self.well_index = 0
         self.last_source = None
         self.last_destination = None
@@ -63,43 +61,46 @@ class Pipette:
             return
 
         if well == None:
-            well = self.ORDERING[self.well_index]
-
-        if well not in self.ORDERING:
-            self.protocol_logger.error(f"Well {well} out of index for tip rack.")
+            tips_id, well = self._find_well_and_tips_id()
+            if tips_id == None:
+                self.protocol_logger.error("Well index is out of bounds.")
+        else:
+            tips_id =  self.tips_info[next(iter(self.tips_info))]["labware_id"] # takes from the first tip rack
 
         self.api.pick_up_tip(
             pipette_id=self.PIPETTE_ID,
-            labware_id=self.TIPS_ID,
+            labware_id=tips_id,
             well=well,
             offset=self.OFFSET,
         )
         self.has_tip = True
         self.well_index += 1
-        self.protocol_logger.info(
-            f"{self.MOUNT.capitalize()} pipette picked up tip from well {self.ORDERING[self.well_index - 1]} on {self.TIPS_INFO['labware_name']}."
-        )
+        self.protocol_logger.info("Picked up tip.")
 
-    def drop_tip(self, return_tip=False):
+    def _find_well_and_tips_id(self):
+        tips_ids = []
+        tips_orderings = []
+        for tip_name in self.TIPS_INFO.keys():
+            tips_ids.append(self.TIPS_INFO[tip_name]["labware_id"])
+            tips_orderings.append(self.TIPS_INFO[tip_name]["ordering"])
+        total_wells = len(
+            tips_orderings[0]
+        ) 
+        for i, tips_id in enumerate(tips_ids):
+            if self.well_index < (i + 1) * total_wells:
+                tips_id = tips_ids[i]
+                well = tips_orderings[i][self.well_index - i * total_wells]
+                return tips_id, well
+
+    def drop_tip(self):
         if not self.has_tip:
             self.protocol_logger.error("Pipette does not have a tip to drop!")
             return
 
-        if return_tip:
-            self.api.drop_tip(
-                pipette_id=self.PIPETTE_ID,
-                labware_id=self.TIPS_ID,
-                well=self.ORDERING[self.well_index - 1],
-                offset=self.OFFSET,
-            )
-            self.protocol_logger.info(
-                f"{self.MOUNT.capitalize()} pipette returned tip to well {self.ORDERING[self.well_index - 1]} on {self.TIPS_INFO['labware_name']}."
-            )
-        else:
-            self.api.drop_tip(pipette_id=self.PIPETTE_ID)
-            self.protocol_logger.info(
-                f"{self.MOUNT.capitalize()} pipette dropped tip into trash."
-            )
+        self.api.drop_tip(pipette_id=self.PIPETTE_ID)
+        self.protocol_logger.info(
+            f"{self.MOUNT.capitalize()} pipette dropped tip into trash."
+        )
         self.has_tip = False
         self.volume = 0
         self.current_solution = "empty"

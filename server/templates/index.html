@@ -57,13 +57,10 @@
             <iframe src="{{ url_for('pendant_drop_video_feed') }}" width="640" height="480" frameborder="0" allowfullscreen></iframe>
         </div>
         <div class="grid-item">
-            <h3>Surface Tension over Time</h3>
-            <!-- <iframe src="{{ url_for('pendant_drop_plot_feed') }}" width="640" height="480" frameborder="0" allowfullscreen></iframe> -->
-            <img id="dynamic-surface-tension" src="{{ url_for('static', filename=file_path_dynamic_surface_tension) }}" alt="Surface Tension over Concentration">
+            <img id="dynamic-surface-tension" src="{{ url_for('static', filename=file_path_dynamic_surface_tension) }}" alt="No surface tension over time data available">
         </div>
         <div class="grid-item">
-            <h3>Surface Tension over Concentration</h3>
-            <img id="results-plot" src="{{ url_for('static', filename=file_path_results_plot) }}" alt="Surface Tension over Concentration">
+            <img id="results-plot" src="{{ url_for('static', filename=file_path_results_plot) }}" alt="No equillibrium surface tension data available.">
         </div>
     </div>
     <div class="status-bar">

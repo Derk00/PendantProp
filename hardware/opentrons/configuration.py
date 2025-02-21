@@ -71,7 +71,7 @@ class Configuration:
                 tips_info=self.LABWARE["tips P20, 1"],
                 containers=self.CONTAINERS
             )
-            self.logger.info("Pipettes loaded successfully")
+            self.logger.info("Pipettes loaded successfully.")
             return {"right": right_pipette, "left": left_pipette}
         except Exception as e:
             self.logger.error(f"Error loading pipettes: {e}")
@@ -88,7 +88,7 @@ class Configuration:
                 elif self.ROBOT_TYPE == "Flex":
                     position = str(position)
                 else:
-                    self.logger.error("robot type not known")
+                    self.logger.error("Robot type not known.")
 
                 labware_df = layout[layout["deck position"] == position]
                 labware_file = labware_df["labware file"].values[0]
@@ -107,7 +107,7 @@ class Configuration:
                 labware[labware_name] = labware_info
 
                 self.LABWARE = labware
-            self.logger.info("Labware loaded successfully")
+            self.logger.info("Labware loaded successfully.")
             return self.LABWARE
         except Exception as e:
             self.logger.error(f"Error loading labware: {e}")
@@ -152,7 +152,7 @@ class Configuration:
                         concentration=concentration,
                     )
 
-            self.logger.info("Containers loaded successfully")
+            self.logger.info("Containers loaded successfully.")
             self.CONTAINERS = containers
             return containers
 

@@ -98,7 +98,7 @@ class PendantDropCamera:
         self.save_dir = f"experiments/{self.experiment_name}/data"
         self.analyzer = PendantDropAnalysis()
         self.logger = Logger(
-            name="pendant_drop_camera",
+            name="protocol",
             file_path=f"experiments/{self.experiment_name}/meta_data",
         )
         self.well_id = well_id
@@ -120,7 +120,7 @@ class PendantDropCamera:
                 target=self._process_thread, daemon=True
             )
             self.process_thread.start()
-            self.logger.info(f"camera: start measuring {self.well_id}")
+            self.logger.info(f"Camera: start measuring {self.well_id}.")
 
     def _stream(self):
         self.camera.StartGrabbing(pylon.GrabStrategy_LatestImageOnly)
@@ -219,7 +219,7 @@ class PendantDropCamera:
         self.process_thread = None
         self.analysis_image = None
         self.current_image = None
-        self.logger.info(f"camera: stopped measurement")
+        self.logger.info(f"Camera: stopped measurement")
 
     def stop_stream(self):
         self.streaming = False

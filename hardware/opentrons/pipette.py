@@ -66,7 +66,7 @@ class Pipette:
             well = self.ORDERING[self.well_index]
 
         if well not in self.ORDERING:
-            self.protocol_logger.error(f"well {well} out of index for tip rack")
+            self.protocol_logger.error(f"Well {well} out of index for tip rack.")
 
         self.api.pick_up_tip(
             pipette_id=self.PIPETTE_ID,
@@ -77,7 +77,7 @@ class Pipette:
         self.has_tip = True
         self.well_index += 1
         self.protocol_logger.info(
-            f"{self.MOUNT} pipette picked up tip from well {self.ORDERING[self.well_index - 1]} on {self.TIPS_INFO['labware_name']}."
+            f"{self.MOUNT.capitalize()} pipette picked up tip from well {self.ORDERING[self.well_index - 1]} on {self.TIPS_INFO['labware_name']}."
         )
 
     def drop_tip(self, return_tip=False):
@@ -93,12 +93,12 @@ class Pipette:
                 offset=self.OFFSET,
             )
             self.protocol_logger.info(
-                f"{self.MOUNT} pipette returned tip to well {self.ORDERING[self.well_index - 1]} on {self.TIPS_INFO['labware_name']}."
+                f"{self.MOUNT.capitalize()} pipette returned tip to well {self.ORDERING[self.well_index - 1]} on {self.TIPS_INFO['labware_name']}."
             )
         else:
             self.api.drop_tip(pipette_id=self.PIPETTE_ID)
             self.protocol_logger.info(
-                f"{self.MOUNT} pipette dropped tip into trash."
+                f"{self.MOUNT.capitalize()} pipette dropped tip into trash."
             )
         self.has_tip = False
         self.volume = 0
@@ -119,14 +119,14 @@ class Pipette:
         # check if pipette has tip
         if not self.has_tip:
             self.protocol_logger.error(
-                f"{self.MOUNT} pipette ({self.PIPETTE_NAME}) does not have a tip! Cancelled aspirating step."
+                f"{self.MOUNT.capitalize()} pipette ({self.PIPETTE_NAME}) does not have a tip! Cancelled aspirating step."
             )
             return
 
         # check if volume exceeds pipette capacity
-        if self.volume + volume > self.MAX_VOLUME:
+        if self.volume + volume > self.MAX_VOLUME and update_info:
             self.protocol_logger.error(
-                f"{self.MOUNT} pipette ({self.PIPETTE_NAME}) does not have enough free volume to aspirate {volume} uL! Cancelled aspirating step."
+                f"{self.MOUNT.capitalize()} pipette ({self.PIPETTE_NAME}) does not have enough free volume to aspirate {volume} uL! Cancelled aspirating step."
             )
             return
 
@@ -153,7 +153,6 @@ class Pipette:
         if touch_tip:
             self.touch_tip(container=source)
 
-        self.last_source = source
         # update information:
         if update_info:
             source.aspirate(volume, log=log)
@@ -162,6 +161,7 @@ class Pipette:
                 and self.current_solution != source.solution_name
             ):
                 self.clean = False
+            self.last_source = source
             self.current_solution = source.solution_name
             self.volume += volume
 
@@ -219,9 +219,9 @@ class Pipette:
         if touch_tip:
             self.touch_tip(container=destination)
 
-        self.last_destination = destination
         if update_info:
             self.volume -= volume
+            self.last_destination = destination
             destination.dispense(volume=volume, source=self.last_source, log=log)
 
         if log:
@@ -239,7 +239,7 @@ class Pipette:
         blow_out=False,
     ):
         self.protocol_logger.info(
-            f"Transferring {volume} uL from {source.WELL_ID} to well {destination.WELL_ID} with {self.MOUNT} pipette.)"
+            f"Transferring {volume} uL from {source.WELL_ID} to well {destination.WELL_ID} with {self.MOUNT} pipette."
         )
         self.aspirate(volume=volume, source=source, touch_tip=touch_tip, mix=mix)
         self.dispense(
@@ -276,7 +276,7 @@ class Pipette:
 
     def touch_tip(self, container: Container, repeat=1):
         if not self.has_tip:
-            self.protocol_logger.error("no tip attached to perform touch_tip!")
+            self.protocol_logger.error("No tip attached to perform touch_tip!")
             return
         depth = (
             0.05 * container.DEPTH
@@ -320,7 +320,7 @@ class Pipette:
                     speed=30,
                 )
 
-        self.protocol_logger.info(f"touched tip, repeated {repeat} times")
+        self.protocol_logger.info(f"Touched tip performed, repeated {repeat} times")
 
     def mixing(self, container: Container, mix: any):
         mix_order, volume_mix, repeat_mix = mix
@@ -328,7 +328,7 @@ class Pipette:
             self.aspirate(volume=volume_mix, source=container, log=False, update_info=False)
             self.dispense(volume=volume_mix, destination=container, log=False, update_info=False)
         self.protocol_logger.info(
-            f"done with mixing in {container.WELL_ID} with order {mix_order}, with volume {volume_mix} uL, repeated {repeat_mix} times"
+            f"Done with mixing in {container.WELL_ID} with order {mix_order}, with volume {volume_mix} uL, repeated {repeat_mix} times"
         )
 
     def blow_out(self, container: Container):
@@ -342,16 +342,16 @@ class Pipette:
 
     def air_gap(self, air_volume: float):
         if not self.has_tip:
-            self.protocol_logger.error("no tip attached to perform air_gap!")
+            self.protocol_logger.error("No tip attached to perform air_gap!")
             return
 
         if air_volume + self.volume > self.MAX_VOLUME:
-            self.protocol_logger.error("air gap exceeds pipette capacity!")
+            self.protocol_logger.error("Air gap exceeds pipette capacity!")
             return
 
         if self.last_source == None:
             self.protocol_logger.error(
-                "no source location found, needed to perform air gap!"
+                "No source location found, needed to perform air gap!"
             )
             return
         height_percentage = 0.05
@@ -369,12 +369,12 @@ class Pipette:
         )
         self.air_gap_volume = air_volume
         self.protocol_logger.info(
-            f"air gap of {air_volume} uL performed in {self.MOUNT} pipette."
+            f"Air gap of {air_volume} uL performed in {self.MOUNT} pipette."
         )
 
     def remove_air_gap(self, at_drop_stage: bool = False):
         if not self.has_tip:
-            self.protocol_logger.error("no tip attached to remove air_gap!")
+            self.protocol_logger.error("No tip attached to remove air_gap!")
             return
 
         if at_drop_stage:
@@ -386,7 +386,7 @@ class Pipette:
                 container = self.last_source
             else:
                 self.protocol_logger.error(
-                    "no source or destination location found, needed to remove air gap!"
+                    "No source or destination location found, needed to remove air gap!"
                 )
                 return
         height_percentage = 0.05
@@ -402,12 +402,12 @@ class Pipette:
             log=False,
             update_info=False,
         )
-        self.protocol_logger.info(f"air gap of {self.air_gap_volume} uL removed in {self.MOUNT} pipette.")
+        self.protocol_logger.info(f"Air gap of {self.air_gap_volume} uL removed in {self.MOUNT} pipette.")
         self.air_gap_volume = 0
 
     def clean_tip(self):
         if not self.has_tip:
-            self.protocol_logger.error("no tip attached to clean tip!")
+            self.protocol_logger.error("No tip attached to clean tip!")
             return
         try:
             sponge = self.CONTAINERS["sponge"]
@@ -438,7 +438,7 @@ class Pipette:
                 offset=self.OFFSET,
                 speed=30,
             )
-        self.protocol_logger.info("pipette tip cleaned on sponge.")
+        self.protocol_logger.info("Pipette tip cleaned on sponge.")
         sponge.update_well()
 
     def measure_pendant_drop(
@@ -453,14 +453,14 @@ class Pipette:
     ):
         if self.PIPETTE_NAME != "p20_single_gen2":
             self.protocol_logger.error(
-                f"Wrong pipette is given. Expected p20_single_gen2 but got {self.PIPETTE_NAME}"
+                f"Wrong pipette is given. Expected p20_single_gen2 but got {self.PIPETTE_NAME}."
             )
             return
         self.protocol_logger.info(f"Start pendant drop measurement of {source.WELL_ID}, containing {source.concentration} mM {source.solution_name}")
         if self.has_tip == False:
             self.pick_up_tip()
-        self.aspirate(volume=15, source=source, flow_rate=flow_rate, mix=("before", 15, 2), update_info=False, log=False) #! change later to 5 time mixing, to save time now.
-        self.protocol_logger.info(f"Aspirating 15 uL from {source.WELL_ID}")
+        self.mixing(container=source, mix=("before", 15, 2))
+        self.aspirate(volume=15, source=source, flow_rate=flow_rate)
         self.air_gap(air_volume=5)
         self.clean_tip()
         self.remove_air_gap(at_drop_stage=True)
@@ -486,7 +486,7 @@ class Pipette:
             update_info=False
         )  # aspirate drop in tip
         self.protocol_logger.info("Re-aspirated the pendant drop into the tip.")
-        self.dispense(volume=15, destination=source, update_info=False, log=False)  # return liquid to source
+        self.dispense(volume=15, destination=source)  # return liquid to source
         self.protocol_logger.info("Returned volume in tip to source.")
         self.drop_tip()
         self.protocol_logger.info("Done with pendant drop measurement.")

@@ -26,7 +26,7 @@ class Plotter:
         return x_smooth
 
     def plot_results_well_id(self, df: pd.DataFrame):
-        try:
+        if not df.empty:
             self._load_data(df)
 
             wells_ids = self.df["well id"]
@@ -40,23 +40,22 @@ class Plotter:
                 f"Results experiment {self.settings['EXPERIMENT_NAME']}",
                 fontsize=self.fontsize_labels,
             )
-            ax.tick_params(axis="x", rotation=45)
+            ax.tick_params(axis="x", rotation=90)
             plt.tight_layout()
 
             # save in experiment folder and plots cache for web interface
             plt.savefig(f"experiments/{self.settings['EXPERIMENT_NAME']}/results_plot.png")
             plt.savefig("server/static/plots_cache/results_plot.png")
+            plt.close(fig)
 
-            self.logger.info("Plotter: created results plot with well IDs.")
-        except Exception as e:
-            self.logger.warning(f"Plotter: could not create plot results with well IDs. Error: {e}")
+    def plot_dynamic_surface_tension(self, dynamic_surface_tension: list, well_id: str, drop_count: int):
+        if dynamic_surface_tension:
+            df = pd.DataFrame(
+                dynamic_surface_tension, columns=["time (s)", "surface tension (mN/m)"]
+            )
 
-    def plot_dynamic_surface_tension(self, df: pd.DataFrame, well_id: str):
-        try:
-            self._load_data(df)
-
-            t = self.df["time (s)"]
-            st = self.df["surface tension (mN/m)"]
+            t = df["time (s)"]
+            st = df["surface tension (mN/m)"]
 
             t_smooth = self._smooth_data(t)
             st_smooth = self._smooth_data(st)
@@ -67,14 +66,12 @@ class Plotter:
             ax.set_ylim(20, 80)
             ax.set_xlabel("Time (s)", fontsize=self.fontsize_labels)
             ax.set_ylabel("Surface Tension (mN/m)", fontsize=self.fontsize_labels)
-            ax.set_title(f"Well ID: {well_id}", fontsize=self.fontsize_labels)
+            ax.set_title(f"Well ID: {well_id}, drop_count: {drop_count}", fontsize=self.fontsize_labels)
             ax.grid(axis="y")
 
             plt.savefig(f"experiments/{self.settings['EXPERIMENT_NAME']}/data/{well_id}/dynamic_surface_tension_plot.png")
             plt.savefig("server/static/plots_cache/dynamic_surface_tension_plot.png")
-            self.logger.info("Plotter: dynamic surface tension plot created.")
-        except Exception as e:
-            self.logger.warning(f"Plotter: could not create dynamic surface tension plot. Error: {e}")
+            plt.close(fig)
 
     def plot_results_concentration(self, df: pd.DataFrame):
         try:
@@ -99,6 +96,8 @@ class Plotter:
             plt.savefig(f"experiments/{self.settings['EXPERIMENT_NAME']}/results_plot.png")
             plt.savefig("server/static/plots_cache/results_plot.png")
 
-            self.logger.info("Plotter: created results plot with concentrations.")
+            # self.logger.info("Plotter: created results plot with concentrations.")
         except Exception as e:
             self.logger.warning(f"Plotter: could not create plot results with concentrations. Error: {e}")
+        finally:
+            plt.close(fig)

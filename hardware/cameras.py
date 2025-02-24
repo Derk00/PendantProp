@@ -92,7 +92,7 @@ class PendantDropCamera:
         self.process_thread = None  # Combined thread for save, analyze, and plot
         self.well_id = None
 
-    def initialize_measurement(self, well_id: str):
+    def initialize_measurement(self, well_id: str, drop_count: int):
         self.settings = load_settings()
         self.experiment_name = self.settings["EXPERIMENT_NAME"]
         self.save_dir = f"experiments/{self.experiment_name}/data"
@@ -102,9 +102,11 @@ class PendantDropCamera:
             file_path=f"experiments/{self.experiment_name}/meta_data",
         )
         self.well_id = well_id
+        self.drop_count = drop_count
         self.st_t = []  # List to store [time, surface tension] measurements
         self.scale_t = [] # List to store [time, scale reading] measurements
-
+        self.start_stream()
+        
     def start_stream(self):
         if not self.streaming:
             self.streaming = True
@@ -156,40 +158,10 @@ class PendantDropCamera:
                 with self.lock:
                     self.analyze_image(self.current_image)
 
-            # Generate/update the plot image if there are data points to plot
-            if self.st_t is not None and len(self.st_t) > window_size:
-                # Create the plot
-                fig, ax = plt.subplots()
-                t = [item[0] for item in self.st_t]
-                st = [item[1] for item in self.st_t]
-
-                t_smooth = np.convolve(t, np.ones(window_size), "valid") / window_size
-                st_smooth = np.convolve(st, np.ones(window_size), "valid") / window_size
-
-                ax.plot(t_smooth, st_smooth, lw=2, color="black")
-                ax.set_xlim(0, t_smooth[-1] + 5)
-                ax.set_ylim(20, 80)
-                ax.set_xlabel("Time (s)")
-                ax.set_ylabel("Surface Tension (mN/m)")
-                ax.set_title(f"Well ID: {self.well_id}")
-                ax.grid(axis="y")
-
-                # Save the plot to a BytesIO buffer and update self.plot_image
-                buf = BytesIO()
-                plt.savefig(buf, format="png")
-                plt.close(fig)
-                buf.seek(0)
-                # Convert the buffer to a NumPy array and then to a JPEG-encoded image
-                image = np.asarray(bytearray(buf.read()), dtype=np.uint8)
-                image = cv2.imdecode(image, cv2.IMREAD_COLOR)
-                ret, buffer = cv2.imencode(".jpg", image)
-                if ret:
-                    self.plot_image = buffer.tobytes()
-            # Small sleep to yield control and reduce CPU usage
             time.sleep(0.1)
 
     def save_image(self, img):
-        directory = f"{self.save_dir}/{self.well_id}"
+        directory = f"{self.save_dir}/{self.well_id}/images/droplet_{self.drop_count}"
         if not os.path.exists(directory):
             os.makedirs(directory)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -219,6 +191,7 @@ class PendantDropCamera:
         self.process_thread = None
         self.analysis_image = None
         self.current_image = None
+        self.stop_stream()
         self.logger.info(f"Camera: stopped measurement")
 
     def stop_stream(self):

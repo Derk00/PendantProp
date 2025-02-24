@@ -177,7 +177,7 @@ class OpentronsAPI:
         response = requests.post(url=url, headers=self.HEADERS, data=command_payload)
         self.logger.info("Robot homed.")
 
-    def delay(self, seconds: float, minutes=0, message=None, intent="setup"):
+    def delay(self, seconds: float, minutes=0, message=None, intent="setup", log = False):
         """
         delay
         """
@@ -197,7 +197,8 @@ class OpentronsAPI:
             data=command_payload,
             params={"waitUntilComplete": True},
         )
-        self.logger.info(f"Delay of {seconds} seconds & {minutes} minutes.")
+        if log:
+            self.logger.info(f"Delay of {seconds} seconds & {minutes} minutes.")
 
     def pick_up_tip(
         self,

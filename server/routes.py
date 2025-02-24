@@ -24,7 +24,7 @@ from utils.load_save_functions import (
 from hardware.cameras import OpentronCamera, PendantDropCamera
 from hardware.opentrons.http_communications import OpentronsAPI
 from hardware.sensor.sensor_api import SensorAPI
-from protocol import Protocol
+from hardware.opentrons.protocol import Protocol
 
 # initialize the Flask app
 app = Flask(__name__)

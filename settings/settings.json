@@ -1,9 +1,9 @@
 {
     "ROBOT_IP": "169.254.220.146",
     "ROBOT_TYPE": "OT2",
-    "EXPERIMENT_NAME": "AsCatPep_PAS_0014",
+    "EXPERIMENT_NAME": "test_new_pendant",
     "DROP_VOLUME": "6",
-    "EQUILIBRATION_TIME": "900",
+    "EQUILIBRATION_TIME": "20",
     "FLOW_RATE": "2",
     "DENSITY": "0.99776",
     "SCALE": "0.002621022419116357",
@@ -12,9 +12,9 @@
     "EXPLOIT_POINTS": "4",
     "WELL_VOLUME": "100",
     "DYNAMIC_EQUILIBRATION_TIME": "True",
-    "CONFIG_FILENAME": "layout_PAS0014.csv",
+    "CONFIG_FILENAME": "layout_measure_wells.csv",
     "UPLOAD_FOLDER": "/var/lib/jupyter/notebooks",
-    "WELL_INFO_FILENAME": "well_info_PAS0014.csv",
+    "WELL_INFO_FILENAME": "well_info.csv",
     "CHARACTERIZATION_INFO_FILENAME": "characterization_info.csv",
-    "GIT_COMMIT_HASH": "31f67e0f2de27e479f34449b6065365044397be9"
+    "GIT_COMMIT_HASH": "ba652184f1559abf2f0710014fc042056a745f00"
 }

@@ -4,12 +4,12 @@ import numpy as np
 
 from utils.load_save_functions import load_settings
 from utils.logger import Logger
+from utils.utils import smooth_list
 
 
 class Plotter:
 
     def __init__(self):
-        self.df = None
         self.settings = load_settings()
         self.fontsize_labels = 15
         self.window_size = 20
@@ -18,19 +18,11 @@ class Plotter:
             file_path=f'experiments/{self.settings["EXPERIMENT_NAME"]}/meta_data',
         )
 
-    def _load_data(self, df: pd.DataFrame):
-        self.df = df
-
-    def _smooth_data(self, x: list):
-        x_smooth = np.convolve(x, np.ones(self.window_size), "valid") / self.window_size
-        return x_smooth
 
     def plot_results_well_id(self, df: pd.DataFrame):
         if not df.empty:
-            self._load_data(df)
-
-            wells_ids = self.df["well id"]
-            st_eq = self.df["surface tension eq. (mN/m)"]
+            wells_ids = df["well id"]
+            st_eq = df["surface tension eq. (mN/m)"]
 
             fig, ax = plt.subplots()
             ax.bar(wells_ids, st_eq, color="C0")
@@ -57,8 +49,8 @@ class Plotter:
             t = df["time (s)"]
             st = df["surface tension (mN/m)"]
 
-            t_smooth = self._smooth_data(t)
-            st_smooth = self._smooth_data(st)
+            t_smooth = smooth_list(x=t, window_size=self.window_size)
+            st_smooth = smooth_list(x=st, window_size=self.window_size)
 
             fig, ax = plt.subplots()
             ax.plot(t_smooth, st_smooth, lw=2, color="black")
@@ -73,26 +65,25 @@ class Plotter:
             plt.savefig("server/static/plots_cache/dynamic_surface_tension_plot.png")
             plt.close(fig)
 
-    def plot_results_concentration(self, df: pd.DataFrame):
+    def plot_results_concentration(self, df: pd.DataFrame, solution_name: str):
         if not df.empty:
-            self._load_data(df)
-
-            concentrations = self.df["concentration"]
-            st_eq = self.df["surface tension eq. (mN/m)"]
+            df_solution = df.loc[df["solution"] == solution_name]
+            concentrations = df_solution["concentration"]
+            st_eq = df_solution["surface tension eq. (mN/m)"]
 
             fig, ax = plt.subplots()
             ax.scatter(concentrations, st_eq)
             ax.set_ylim(20, 80)
-            # ax.set_xscale("log")
+            ax.set_xscale("log")
             ax.set_xlabel("Concentration", fontsize=self.fontsize_labels)
             ax.set_ylabel("Surface Tension Eq. (mN/m)", fontsize=self.fontsize_labels)
             ax.set_title(
-                f"Results experiment {self.settings['EXPERIMENT_NAME']}",
+                f"Results experiment {self.settings['EXPERIMENT_NAME']}, solution: {solution_name}",
                 fontsize=self.fontsize_labels,
                 )
             plt.tight_layout()
 
             # save in experiment folder and plots cache for web interface
-            plt.savefig(f"experiments/{self.settings['EXPERIMENT_NAME']}/results_plot.png")
+            plt.savefig(f"experiments/{self.settings['EXPERIMENT_NAME']}/results_plot_{solution_name}.png")
             plt.savefig("server/static/plots_cache/results_plot.png")
             plt.close(fig)

@@ -41,7 +41,6 @@ def replace_static_images_with_placeholders():
     for file in image_files:
         os.remove(file)
         placeholder_file = os.path.join(placeholder_dir, os.path.basename(file))
-        print(placeholder_file)
         if os.path.exists(placeholder_file):
             shutil.copy(placeholder_file, "server/static/plots_cache")
 

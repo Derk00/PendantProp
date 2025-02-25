@@ -36,11 +36,10 @@ class DropletManager:
             )
             self.pendant_drop_camera.start_capture()
 
-            measure_time = 0
-            while measure_time < drop_parameters["max_measure_time"]:
+            start_time = time.time()
+            while time.time() - start_time < drop_parameters["max_measure_time"]:
                 self.opentrons_api.delay(seconds=1)
                 time.sleep(1)
-                measure_time += 1
                 dynamic_surface_tension = self.pendant_drop_camera.st_t
                 self.plotter.plot_dynamic_surface_tension(
                     dynamic_surface_tension=dynamic_surface_tension,
@@ -54,7 +53,7 @@ class DropletManager:
                     last_st = 0
                     last_t = 0
                 if (
-                    last_st < 10 or measure_time > last_t
+                    last_st < 10 # or time.time() - start_time > last_t
                 ):  # check if lower than 10 mN/m (not possible) or that the measure time becomes longer than the last recorded time of the droplet (i.e. no droplet is more found.)
                     self.logger.warning("No droplet detected, will remake droplet.")
                     drop_count += 1

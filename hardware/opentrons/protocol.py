@@ -12,8 +12,9 @@ warnings.filterwarnings(
     message="The behavior of DataFrame concatenation with empty or all-NA entries is deprecated",
 )
 
-from utils.logger import Logger
+
 from analysis.plots import Plotter
+from analysis.utils import suggest_volume
 from hardware.opentrons.http_communications import OpentronsAPI
 from hardware.opentrons.droplet_manager import DropletManager
 from hardware.opentrons.configuration import Configuration
@@ -21,6 +22,7 @@ from hardware.opentrons.containers import Container
 from hardware.cameras import PendantDropCamera
 from hardware.sensor.sensor_api import SensorAPI
 from utils.load_save_functions import load_settings
+from utils.logger import Logger
 
 
 class Protocol:
@@ -54,7 +56,7 @@ class Protocol:
             containers=self.containers,
             pendant_drop_camera=self.pendant_drop_camera,
             opentrons_api=self.opentrons_api,
-            plotter = self.plotter,
+            plotter=self.plotter,
             logger=self.logger,
         )
         self.opentrons_api.home()
@@ -63,12 +65,10 @@ class Protocol:
 
     def calibrate(self):
         self.logger.info("Starting calibration...")
-        scale_t = self.left_pipette.measure_pendant_drop(
+        drop_parameters = {"drop_volume": 13, "max_measure_time": 10, "flow_rate": 1}
+        scale_t = self.droplet_manager.measure_pendant_drop(
             source=self.containers["8A1"],
-            drop_volume=13,
-            delay=10,
-            flow_rate=1,
-            pendant_drop_camera=self.pendant_drop_camera,
+            drop_parameters=drop_parameters,
             calibrate=True,
         )
         self._save_calibration_data(scale_t)
@@ -89,19 +89,12 @@ class Protocol:
                 "max_measure_time": float(self.settings["EQUILIBRATION_TIME"]),
                 "flow_rate": float(well_info["flow rate (uL/s)"][i]),
             }
-            dynamic_surface_tension, drop_count, drop_volume = (
+            dynamic_surface_tension, drop_parameters = (
                 self.droplet_manager.measure_pendant_drop(
                     source=self.containers[well_id], drop_parameters=drop_parameters
                 )
             )
-            drop_parameters["drop_volume"] = drop_volume
-            drop_parameters["drop_count"] = drop_count
             self._save_results(dynamic_surface_tension, well_id, drop_parameters)
-            self.plotter.plot_dynamic_surface_tension(
-                dynamic_surface_tension=dynamic_surface_tension,
-                well_id=well_id,
-                drop_count=drop_count,
-            )
             self.plotter.plot_results_well_id(df=self.results)
 
         self._save_final_results()
@@ -127,37 +120,31 @@ class Protocol:
             )
             for i in range(explore_points):
                 well_id = f"{row_id}{i+1}"
+                drop_volume_suggestion = suggest_volume(
+                    results=self.results,
+                    next_concentration=float(self.containers[well_id].concentration),
+                )
                 drop_parameters = {
-                    "drop_volume": float(self.settings["DROP_VOLUME"]),
-                    "measure_time": float(self.settings["EQUILIBRATION_TIME"]),
+                    "drop_volume": drop_volume_suggestion,
+                    "max_measure_time": float(self.settings["EQUILIBRATION_TIME"]),
                     "flow_rate": float(self.settings["FLOW_RATE"]),
                 }
-                dynamic_surface_tension = self.left_pipette.measure_pendant_drop(
-                    source=self.containers[well_id],
-                    drop_volume=drop_parameters["drop_volume"],
-                    delay=drop_parameters["measure_time"],
-                    flow_rate=drop_parameters["flow_rate"],
-                    pendant_drop_camera=self.pendant_drop_camera,
+                dynamic_surface_tension, drop_parameters = (
+                    self.droplet_manager.measure_pendant_drop(
+                        source=self.containers[well_id], drop_parameters=drop_parameters
+                    )
                 )
                 self._save_results(dynamic_surface_tension, well_id, drop_parameters)
-                self._plot_dynamic_surface_tension(
-                    dynamic_surface_tension=dynamic_surface_tension, well_id=well_id
-                )
-                self._plot_results_concentration()
+                self.plotter.plot_results_concentration(df=self.results)
 
         self._save_final_results()
         self.logger.info("Finished characterization protocol.")
         self._play_sound("DATA DATA.")
 
-
     def _play_sound(self, text: str):
         engine = pyttsx3.init()
         engine.say(text)
         engine.runAndWait()
-
-    def _plot_results_concentration(self):
-        if not self.results.empty:
-            self.plotter.plot_results_concentration(df=self.results)
 
     def _update_settings(self):
         self.settings = load_settings()

@@ -1,4 +1,4 @@
-from analysis.image import PendantDropAnalysis
+from analysis.image_analysis import PendantDropAnalysis
 import cv2
 test_image = cv2.imread("test.png")
 

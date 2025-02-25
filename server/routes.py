@@ -219,9 +219,9 @@ def characterize():
         csv_file=csv_file,
         app=app,
     )
-    # thread = threading.Thread(target=protocol.characterize_surfactant)
-    # thread.daemon = True
-    # thread.start()
+    thread = threading.Thread(target=protocol.characterize_surfactant)
+    thread.daemon = True
+    thread.start()
     session["last_action"] = "Surfactant characterization"
     return redirect(url_for("index"))
 

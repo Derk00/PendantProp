@@ -10,7 +10,7 @@ from utils.data_processing import smooth
 
 
 
-class Baysu:
+class ActiveLearner:
     def __init__(self, model = None, parameters: list = None, resolution: int = 1000):
         
         

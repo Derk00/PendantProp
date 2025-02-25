@@ -206,7 +206,7 @@ class PendantDropAnalysis:
         right_visual[:, :, 0] += x
 
         S = ds / de
-        Hin = self.calculate_Hin(S)
+        Hin = self._calculate_Hin(S)
         self.Hin = Hin
         de_scaled = de * self.scale # pixels -> mm
         surface_tension = self.density * self.gravity_constant * (de_scaled**2) * Hin
@@ -224,7 +224,7 @@ class PendantDropAnalysis:
 
         return surface_tension
 
-    def calculate_Hin(self, S):
+    def _calculate_Hin(self, S):
         if not (0.3 < S < 1):
             # self.logger.error("analysis: shape factor S is out of bounds")
             pass

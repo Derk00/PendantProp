@@ -66,7 +66,7 @@ class Plotter:
             ax.set_ylim(20, 80)
             ax.set_xlabel("Time (s)", fontsize=self.fontsize_labels)
             ax.set_ylabel("Surface Tension (mN/m)", fontsize=self.fontsize_labels)
-            ax.set_title(f"Well ID: {well_id}, drop_count: {drop_count}", fontsize=self.fontsize_labels)
+            ax.set_title(f"Well ID: {well_id}, drop count: {drop_count}", fontsize=self.fontsize_labels)
             ax.grid(axis="y")
 
             plt.savefig(f"experiments/{self.settings['EXPERIMENT_NAME']}/data/{well_id}/dynamic_surface_tension_plot.png")
@@ -74,7 +74,7 @@ class Plotter:
             plt.close(fig)
 
     def plot_results_concentration(self, df: pd.DataFrame):
-        try:
+        if not df.empty:
             self._load_data(df)
 
             concentrations = self.df["concentration"]
@@ -95,9 +95,4 @@ class Plotter:
             # save in experiment folder and plots cache for web interface
             plt.savefig(f"experiments/{self.settings['EXPERIMENT_NAME']}/results_plot.png")
             plt.savefig("server/static/plots_cache/results_plot.png")
-
-            # self.logger.info("Plotter: created results plot with concentrations.")
-        except Exception as e:
-            self.logger.warning(f"Plotter: could not create plot results with concentrations. Error: {e}")
-        finally:
             plt.close(fig)

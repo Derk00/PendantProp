@@ -14,7 +14,7 @@ from io import BytesIO
 
 from utils.load_save_functions import load_settings
 from utils.logger import Logger
-from analysis.image import PendantDropAnalysis
+from analysis.image_analysis import PendantDropAnalysis
 
 
 class OpentronCamera:
@@ -87,7 +87,6 @@ class PendantDropCamera:
         self.scale_t = None # Will hold time series data for scale readings !for calibration
         self.current_image = None  # Latest image grabbed from the camera
         self.analysis_image = None  # Latest processed (analyzed) image
-        self.plot_image = None  # Latest plot image (as JPEG bytes)
         self.thread = None  # For streaming
         self.process_thread = None  # Combined thread for save, analyze, and plot
         self.well_id = None
@@ -141,7 +140,6 @@ class PendantDropCamera:
         Combined thread function that:
           - Saves the current image (if available) every second,
           - Analyzes the image (if available) every loop iteration,
-          - And updates the plot image (if enough data is collected).
         """
         # Use a timer to ensure saving happens roughly once per second
         last_save_time = time.time()
@@ -225,29 +223,6 @@ class PendantDropCamera:
                     )
             else:
                 time.sleep(0.05)
-
-    def generate_plot_frame(self):
-        """
-        Generator for streaming the latest plot image.
-        It yields the most recent JPEG-encoded plot (if available).
-        """
-        while not self.stop_background_threads.is_set():
-            if self.plot_image is not None:
-                yield (
-                    b"--frame\r\n"
-                    b"Content-Type: image/jpeg\r\n\r\n" + self.plot_image + b"\r\n"
-                )
-            else:
-                time.sleep(1)
-
-    def start_plot_frame_thread(self):
-        self.plot_frame_thread = threading.Thread(target=self.generate_plot_frame)
-        self.plot_frame_thread.daemon = True
-        self.plot_frame_thread.start()
-
-    def stop_plot_frame_thread(self):
-        self.stop_background_threads.set()
-        self.plot_frame_thread.join()
 
     def stop_measurement(self):
         if self.process_thread is not None:

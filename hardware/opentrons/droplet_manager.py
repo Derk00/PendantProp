@@ -23,10 +23,11 @@ class DropletManager:
         valid_droplet = False
         initial_volume = drop_parameters["drop_volume"]
         incremental_decrease_vol = 1
-        max_retries = 3
+        max_retries = 5
 
         while not valid_droplet and drop_count <= max_retries:
             drop_volume = initial_volume - incremental_decrease_vol * (drop_count - 1)
+            self.logger.info(f"Start measurment of pendant drop of {source.WELL_ID} with drop volume {drop_volume} uL and drop count {drop_count}.")
             self._make_pendant_drop(
                 source=source,
                 drop_volume=drop_volume,
@@ -51,7 +52,7 @@ class DropletManager:
                     last_t = dynamic_surface_tension[-1][0]
                 else: #if no dynamic surface tension is measured, we set last_st to zero
                     last_st = 0
-                    las_t = 0
+                    last_t = 0
                 if (
                     last_st < 10 or measure_time > last_t
                 ):  # check if lower than 10 mN/m (not possible) or that the measure time becomes longer than the last recorded time of the droplet (i.e. no droplet is more found.)
@@ -74,12 +75,15 @@ class DropletManager:
         self._return_pendant_drop(
             source=source, drop_volume=drop_parameters["drop_volume"]
         )
+        # update drop parameters
+        drop_parameters["drop_volume"] = drop_volume
+        drop_parameters["drop_count"] = drop_count
         if calibrate:
             self.logger.info("Done with calibration of PendantProp.")
             return self.pendant_drop_camera.scale_t
         else:
             self.logger.info("Done with pendant drop measurement.")
-            return self.pendant_drop_camera.st_t, drop_count, drop_volume
+            return self.pendant_drop_camera.st_t, drop_parameters
 
     def _make_pendant_drop(
         self, source: Container, drop_volume: float, flow_rate: float, drop_count: int

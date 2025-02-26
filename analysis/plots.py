@@ -18,7 +18,6 @@ class Plotter:
             file_path=f'experiments/{self.settings["EXPERIMENT_NAME"]}/meta_data',
         )
 
-
     def plot_results_well_id(self, df: pd.DataFrame):
         if not df.empty:
             wells_ids = df["well id"]
@@ -42,6 +41,13 @@ class Plotter:
 
     def plot_dynamic_surface_tension(self, dynamic_surface_tension: list, well_id: str, drop_count: int):
         if dynamic_surface_tension:
+            # Ensure consistent lengths for time and surface tension
+            lengths = [len(item) for item in dynamic_surface_tension]
+            min_length = min(lengths)
+            dynamic_surface_tension = [
+                item[:min_length] for item in dynamic_surface_tension
+            ]
+
             df = pd.DataFrame(
                 dynamic_surface_tension, columns=["time (s)", "surface tension (mN/m)"]
             )

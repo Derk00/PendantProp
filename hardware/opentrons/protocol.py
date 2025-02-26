@@ -1,4 +1,5 @@
 import warnings
+import pandas as pd
 
 # Suppress the specific FutureWarning of Pandas
 warnings.filterwarnings(
@@ -28,7 +29,6 @@ from utils.logger import Logger
 from utils.utils import (
     play_sound,
     calculate_average_in_column,
-    calculate_equillibrium_value,
 )
 
 
@@ -73,12 +73,12 @@ class Protocol:
     def calibrate(self):
         self.logger.info("Starting calibration...")
         drop_parameters = {
-            "drop_volume": 13,
-            "max_measure_time": 10,
-            "flow_rate": 2,
+            "drop_volume": 12,
+            "max_measure_time": 60,
+            "flow_rate": 1,
         }  # standard settings for calibration
         scale_t = self.droplet_manager.measure_pendant_drop(
-            source=self.containers["8A1"],
+            source=self.containers["7A1"],
             drop_parameters=drop_parameters,
             calibrate=True,
         )
@@ -167,3 +167,21 @@ class Protocol:
         self.logger.info("Finished characterization protocol.")
         play_sound("DATA DATA.")
 
+    def measure_same_well(self, well_id: str, repeat: int = 3):
+        drop_parameters = {
+            "drop_volume":12,
+            "max_measure_time": 30,
+            "flow_rate": 1
+        }
+        for i in range(repeat):
+            dynamic_surface_tension, drop_parameters = (
+                self.droplet_manager.measure_pendant_drop(
+                    source=self.containers[well_id], drop_parameters=drop_parameters
+                )
+            )
+            df = pd.DataFrame(
+                dynamic_surface_tension, columns=["time (s)", "surface tension (mN/m)"]
+            )
+            df.to_csv(
+                f"experiments/{self.settings['EXPERIMENT_NAME']}/data/{well_id}/dynamic_surface_tension_{i}.csv"
+            )

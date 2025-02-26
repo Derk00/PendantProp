@@ -39,11 +39,11 @@ class Pipette:
         # set max volume
         if self.PIPETTE_NAME == "p20_single_gen2":
             self.MAX_VOLUME = 20
-            self.OFFSET = dict(x=-1.2, y=0.6, z=0)  # TODO settings?
+            self.OFFSET = {"x": -1, "y": 1.4, "z": 0}
 
         elif self.PIPETTE_NAME == "p1000_single_gen2":
             self.MAX_VOLUME = 1000
-            self.OFFSET = dict(x=-0.4, y=1, z=0)  # TODO settings?
+            self.OFFSET = dict(x=-0.7, y=0.3, z=0.8)
 
         else:
             self.protocol_logger.error("Pipette name not recognised!")
@@ -65,7 +65,7 @@ class Pipette:
             if tips_id == None:
                 self.protocol_logger.error("Well index is out of bounds.")
         else:
-            tips_id =  self.tips_info[next(iter(self.tips_info))]["labware_id"] # takes from the first tip rack
+            tips_id =  self.TIPS_INFO[next(iter(self.TIPS_INFO))]["labware_id"] # takes from the first tip rack
 
         self.api.pick_up_tip(
             pipette_id=self.PIPETTE_ID,
@@ -266,11 +266,21 @@ class Pipette:
             offset=offset_move,
         )
 
-    def move_to_well_calibrate(self, well: str, offset: dict = dict(x=0, y=0, z=0)):
+    def move_to_tip_calibrate(self, well: str, offset: dict = dict(x=0, y=0, z=0)):
+        # This is used to check offset of pipettes!!
+        tips_id = self.TIPS_INFO[next(iter(self.TIPS_INFO))]["labware_id"]
+        self.api.move_to_well(
+            pipette_id=self.PIPETTE_ID,
+            labware_id=tips_id,
+            well=well,
+            offset=offset,
+        )
+
+    def move_to_well_calibrate(self, container: Container, well: str, offset: dict = dict(x=0, y=0, z=0)):
         # This is used to check offset of pipettes!!
         self.api.move_to_well(
             pipette_id=self.PIPETTE_ID,
-            labware_id=self.TIPS_ID,
+            labware_id=container.LABWARE_ID,
             well=well,
             offset=offset,
         )
@@ -524,12 +534,12 @@ class Pipette:
         # adding surfactant to the first well
         self.pick_up_tip()
         self.aspirate(
-            volume=well_volume, source=self.CONTAINERS[well_id_solution], touch_tip=True
+            volume=well_volume, source=self.CONTAINERS[well_id_solution]
         )
+        self.touch_tip(container=self.CONTAINERS[well_id_solution], repeat=3)
         self.dispense(
             volume=well_volume,
             destination=self.CONTAINERS[f"{row_id}1"],
-            touch_tip=True,
             mix=("after", well_volume / 2, 5),
         )
 
@@ -541,7 +551,6 @@ class Pipette:
             self.dispense(
                 volume=well_volume,
                 destination=self.CONTAINERS[f"{row_id}{i+1}"],
-                touch_tip=True,
                 mix=("after", well_volume / 2, 5),
             )
 

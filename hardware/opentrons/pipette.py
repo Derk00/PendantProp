@@ -496,11 +496,12 @@ class Pipette:
         else:
             return pendant_drop_camera.st_t
 
-    def serial_dilution(self, row_id: str, solution_name: str, n_dilutions: int, well_volume: float):
+    def serial_dilution(self, row_id: str, solution_name: str, n_dilutions: int, well_volume: float, dilution_factor: float):
         # find relevant well id's
         well_id_trash = get_well_id(containers=self.CONTAINERS, solution="trash") # well ID liquid waste
         well_id_water = get_well_id(containers=self.CONTAINERS, solution="water") # well ID water stock
         well_id_solution = get_well_id(containers=self.CONTAINERS, solution=solution_name)
+        well_id_dilution = get_well_id(containers=self.CONTAINERS, solution=dilution_factor)
 
         # log start of serial dilution
         self.protocol_logger.info(
@@ -556,8 +557,9 @@ class Pipette:
         )
         self.drop_tip()
 
-        # log end of serial dilution
-        self.protocol_logger.info("End of serial dilution.")
+        self.protocol_logger.info(
+            f"After {n_dilutions} dilutions, the highest dilution factor is {cumulative_dilution_factor}. \n End of serial dilution."
+        )
 
     def __str__(self):
         return f"""

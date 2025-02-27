@@ -77,28 +77,35 @@ class Container:
                 f"Container: aspirated {volume} uL from this container with content {self.concentration} mM {self.solution_name}."
             )
 
-    def dispense(self, volume: float, source: "Container", log = True):
+    def dispense(self, volume: float, cumulative_dilution_factor: float, source: "Container", log = True, ):
         if (self.volume_mL * 1e3) + volume > self.MAX_VOLUME:
             self.protocol_logger.warning("Overflowing of container!")
             return
         self.volume_mL += volume * 1e-3
         self.update_liquid_height(volume_mL=self.volume_mL)
+        _previous_concentration = self.concentration
 
         # case 1: container is empty
         if self.solution_name == "empty":
             self.solution_name = source.solution_name
             self.concentration = source.concentration
+            self.dilution_factor = 1       # Starts with 1
+            self.cumulative_dilution_factor = 1  
 
         # case 2: container contains water and solution is added from source
         elif self.solution_name == "water" and source.solution_name != "water":
             self.solution_name = source.solution_name
             self.concentration = (float(source.concentration) * volume*1e-3) / self.volume_mL
+            self.dilution_factor = source.concentration / self.concentration
+            self.cumulative_dilution_factor *= self.dilution_factor
 
         # case 3: containers contains solution and water is added from source
         elif self.solution_name != "water" and source.solution_name == "water":
             self.concentration = (
                 float(self.concentration) * volume * 1e-3
             ) / self.volume_mL
+            self.dilution_factor = _previous_concentration / self.concentration
+            self.cumulative_dilution_factor *= self.dilution_factor  
 
         # case 4: container contains solution and same solution, but different concentration, is added from source
         elif self.solution_name == source.solution_name:
@@ -108,9 +115,12 @@ class Container:
                 self.concentration = (
                     n_source_mM + n_container_mM
                 ) / self.volume_mL
+                self.dilution_factor = _previous_concentration / self.concentration
+                self.cumulative_dilution_factor *= self.dilution_factor  
+                
             else:
                 pass
-
+            return self.cumulative_dilution_factor
         # case 5: other cases #TODO extend to mixtures
         else:
             if log:
@@ -233,6 +243,7 @@ class PlateWell(Container):
         initial_volume_mL: float,
         solution_name: str,
         concentration: any,
+        dilution_factor: float,
     ):
         super().__init__(
             labware_info,
@@ -248,6 +259,10 @@ class PlateWell(Container):
         # self.height_mm = 1e3 * (volume_mL) / (np.pi * (self.INNER_DIAMETER_MM / 2) ** 2)
         self.height_mm = 2 # static height for now
         return self.height_mm
+    
+    def update_dilution(self, concentration, initial_volume_mL):
+        
+        return
 
 
 class DropStage:
